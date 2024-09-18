@@ -6,10 +6,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, WebDriverException
 from time import sleep
 import urllib.parse
+import os
 
 def setup_driver():
     """Sets up the Selenium WebDriver with options to avoid detection as a bot."""
-    chrome_driver_path = r"C:\WebDrivers\chromedriver.exe"  # Update with your ChromeDriver path
+    chrome_driver_path = os.path.join(os.path.dirname(__file__), "chromedriver.exe")
+  # Update with your ChromeDriver path
     service = Service(executable_path=chrome_driver_path)
     options = webdriver.ChromeOptions()
     
