@@ -1,51 +1,52 @@
 import streamlit as st
 import time
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from jarir_scraper import scrape_jarir  # Import your existing scraper function
+from pathlib import Path
+from store_scraper import ScraperManager  # Adjust the import to match your structure
 
-# Streamlit App
-def main():
-    st.title("Real-time Web Scraper")
-    st.markdown("Enter a search term to scrape products from Stores.")
+# Title and instructions
+st.title("Real-Time Product Scraper")
+st.write("Enter a search term and see products as they are scraped from online stores!")
 
-    # User input section
-    search_term = st.text_input("Search Term", value="iPhone 16")
-    if st.button("Search"):
-        if search_term.strip():
-            # Start the scraping process
-            st.write(f"Scraping results for: {search_term}")
-            placeholder = st.empty()  # Placeholder for real-time updates
-            product_container = st.container()  # Container to display products
-            
-            # Display scraping status
-            with st.spinner("Scraping in progress..."):
-                try:
-                    # Start scraping and show results as they are found
-                    for idx, product in enumerate(scrape_jarir(search_term)):
-                        with product_container:
-                            # Display each product in a card-like format
-                            st.markdown(f"### {product['title']}")
-                            st.markdown(f"**Store**: {product['store']}")
-                            st.markdown(f"**Price**: {product['price']}")
-                            st.markdown(f"**Info**: {product['info']}")
-                            st.image(product['image_url'], width=150)
-                            st.markdown(f"[Product Link]({product['link']})")
-                            st.markdown("---")
-                        
-                        # Real-time update delay to simulate scraping progress
-                        time.sleep(1)  # You can adjust this based on your scraping speed
-                    
-                    # Remove scraping progress message
-                    placeholder.empty()
+# User input for search term
+search_term = st.text_input("Search for products", "iPhone 16")
 
-                except Exception as e:
-                    # Error handling
-                    st.error(f"An error occurred during scraping: {e}")
+# Search button to trigger the scraping process
+if st.button("Search"):
+    if search_term:
+        st.write(f"Searching for: {search_term}")
+        
+        # Create an instance of the ScraperManager class from store_scraper.py
+        scraper_manager = ScraperManager()
+        progress_text = st.empty()  # Placeholder for progress text
+        product_display = st.empty()  # Container to display products
 
-        else:
-            st.error("Please enter a valid search term.")
+        product_count = 0
+        products_fetched = []
 
-if __name__ == "__main__":
-    main()
+        try:
+            # Real-time scraping logic
+            for product in scraper_manager.scrape_all_stores(search_term):
+                product_count += 1
+                products_fetched.append(product)
+
+                # Update progress
+                progress_text.text(f"Scraped {product_count} products so far...")
+
+                # Dynamically update the product display
+                with product_display.container():
+                    for p in products_fetched:
+                        st.write(f"### {p['title']}")
+                        st.write(f"**Price**: {p['price']}")
+                        st.write(f"**Store**: {p['store']}")
+                        st.write(f"**Info**: {p['info']}")
+                        if p['image_url']:
+                            st.image(p['image_url'], width=150)
+                        st.write(f"[Product Link]({p['link']})")
+                        st.write("---")
+
+                # Add a small delay to simulate real-time fetching
+                time.sleep(1)
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+    else:
+        st.warning("Please enter a search term.")
