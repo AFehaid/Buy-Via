@@ -1,4 +1,4 @@
-# C:\Users\afeha\Documents\My Documents\Buy-Via\backend\dependencies\deps.py
+# backend/routers/auth.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from fastapi.security import OAuth2PasswordRequestForm

@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
-from routers import auth 
+from routers import auth, search
 
 load_dotenv()
 print(f"DB_URL: {os.getenv('DB_URL')}")
@@ -19,6 +19,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(search.router)
 
 @app.get("/")
 async def health_check():

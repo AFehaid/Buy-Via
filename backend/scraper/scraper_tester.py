@@ -17,7 +17,7 @@ class ScraperManager:
 
 if __name__ == "__main__":
     manager = ScraperManager()
-    search_value = "Samsung Galaxy S23"  # Example search term
+    search_value = "Playstation 5"  # Example search term
 
     for product in manager.scrape_all_stores(search_value):
         print(product)  # Print each product as it is scraped in real time

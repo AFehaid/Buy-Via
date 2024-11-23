@@ -50,8 +50,8 @@ class Product(Base):
     __tablename__ = "products"
     product_id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True, nullable=False)
-    price = Column(Float, nullable=False)
-    info = Column(String)
+    price = Column(Float, nullable=True)
+    info = Column(String) 
     search_value = Column(String, index=True)
     link = Column(String)
     image_url = Column(String)
