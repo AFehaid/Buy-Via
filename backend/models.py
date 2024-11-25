@@ -50,15 +50,17 @@ class Product(Base):
     __tablename__ = "products"
     product_id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True, nullable=False)
+    title_in_arabic = Column(String, nullable=True) # empty for now
     price = Column(Float, nullable=True)
     info = Column(String) 
     search_value = Column(String, index=True)
     link = Column(String)
     image_url = Column(String)
     store_id = Column(Integer, ForeignKey("stores.store_id"))
-    group_id = Column(Integer, ForeignKey("product_groups.group_id"))
-    category_id = Column(Integer, ForeignKey("categories.category_id"))
-    availability = Column(Boolean, default=True)
+    group_id = Column(Integer, ForeignKey("product_groups.group_id"), nullable=True)  # empty for now
+    category_id = Column(Integer, ForeignKey("categories.category_id", nullable=True)) # empty for now
+    availability = Column(Boolean, default=True) # empty for now
+    last_updated = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))  # Track last update
     store = relationship("Store", back_populates="products")
     category = relationship("Category", back_populates="products")
     group = relationship("ProductGroup", back_populates="products")
@@ -82,11 +84,9 @@ class Category(Base):
 class ProductGroup(Base):
     __tablename__ = "product_groups"
     group_id = Column(Integer, primary_key=True, index=True)
-    group_name = Column(String, nullable=False)
-    category_id = Column(Integer, ForeignKey("categories.category_id"))
+    group_name = Column(String, nullable=True)  # Optional human-readable name
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
-    category = relationship("Category", back_populates="product_groups")
     products = relationship("Product", back_populates="group")
 
 
