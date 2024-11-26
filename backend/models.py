@@ -1,10 +1,9 @@
-# C:\Users\afeha\Documents\My Documents\Buy-Via\backend\models.py
 import os
 from datetime import datetime, timezone
 from sqlalchemy import (
     create_engine, Column, Integer, String, ForeignKey, Float, DateTime, Boolean
 )
-from sqlalchemy.ext.declarative import declarative_base # to Initialize Base for the models
+from sqlalchemy.ext.declarative import declarative_base  # To initialize Base for the models
 from sqlalchemy.orm import relationship, sessionmaker
 from dotenv import load_dotenv
 from pathlib import Path
@@ -42,25 +41,25 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
-    search_histories = relationship("SearchHistory", back_populates="user")
-    alerts = relationship("Alert", back_populates="user")
+    search_histories = relationship("SearchHistory", back_populates="user", cascade="all, delete-orphan")
+    alerts = relationship("Alert", back_populates="user", cascade="all, delete-orphan")
 
 
 class Product(Base):
     __tablename__ = "products"
     product_id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True, nullable=False)
-    title_in_arabic = Column(String, nullable=True) # empty for now
+    title_in_arabic = Column(String, nullable=True)  # Empty for now
     price = Column(Float, nullable=True)
     info = Column(String) 
     search_value = Column(String, index=True)
     link = Column(String)
     image_url = Column(String)
-    store_id = Column(Integer, ForeignKey("stores.store_id"))
-    group_id = Column(Integer, ForeignKey("product_groups.group_id"), nullable=True)  # empty for now
-    category_id = Column(Integer, ForeignKey("categories.category_id", nullable=True)) # empty for now
-    availability = Column(Boolean, default=True) # empty for now
-    last_updated = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))  # Track last update
+    store_id = Column(Integer, ForeignKey("stores.store_id", ondelete="CASCADE"))
+    group_id = Column(Integer, ForeignKey("product_groups.group_id", ondelete="SET NULL"), nullable=True)
+    category_id = Column(Integer, ForeignKey("categories.category_id", ondelete="SET NULL"), nullable=True)
+    availability = Column(Boolean, default=True)
+    last_updated = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     store = relationship("Store", back_populates="products")
     category = relationship("Category", back_populates="products")
     group = relationship("ProductGroup", back_populates="products")
@@ -69,41 +68,45 @@ class Product(Base):
 class Store(Base):
     __tablename__ = "stores"
     store_id = Column(Integer, primary_key=True, index=True)
-    store_name = Column(String, nullable=False)
-    products = relationship("Product", back_populates="store")
+    store_name = Column(String, nullable=False, unique=True)
+    products = relationship("Product", back_populates="store", cascade="all, delete-orphan")
 
 
 class Category(Base):
     __tablename__ = "categories"
     category_id = Column(Integer, primary_key=True, index=True)
-    category_name = Column(String)
+    category_name = Column(String, nullable=False, unique=True)
     products = relationship("Product", back_populates="category")
-    product_groups = relationship("ProductGroup", back_populates="category")
+    product_groups = relationship("ProductGroup", back_populates="category", cascade="all, delete-orphan")
 
 
 class ProductGroup(Base):
     __tablename__ = "product_groups"
     group_id = Column(Integer, primary_key=True, index=True)
     group_name = Column(String, nullable=True)  # Optional human-readable name
+    category_id = Column(Integer, ForeignKey("categories.category_id", ondelete="SET NULL"))
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    category = relationship("Category", back_populates="product_groups")
     products = relationship("Product", back_populates="group")
 
 
 class SearchHistory(Base):
     __tablename__ = "search_histories"
     search_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"))
-    search_value = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
+    search_value = Column(String, nullable=False)  # The user's search term
+    product_id = Column(Integer, ForeignKey("products.product_id", ondelete="SET NULL"), nullable=True)  # The product the user clicked on
     search_date = Column(DateTime, default=datetime.now(timezone.utc))
     user = relationship("User", back_populates="search_histories")
+    product = relationship("Product")  # Link to the product the user viewed
 
 
 class Alert(Base):
     __tablename__ = "alerts"
     alert_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"))
-    product_id = Column(Integer, ForeignKey("products.product_id"))
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
+    product_id = Column(Integer, ForeignKey("products.product_id", ondelete="CASCADE"))
     threshold_price = Column(Float, nullable=False)
     alert_status = Column(String, default="active")  # Options: active, triggered, expired
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
@@ -115,8 +118,8 @@ class Alert(Base):
 class ProductMatch(Base):
     __tablename__ = "product_matches"
     product_match_id = Column(Integer, primary_key=True, index=True)
-    product_id_1 = Column(Integer, ForeignKey("products.product_id"))
-    product_id_2 = Column(Integer, ForeignKey("products.product_id"))
+    product_id_1 = Column(Integer, ForeignKey("products.product_id", ondelete="CASCADE"))
+    product_id_2 = Column(Integer, ForeignKey("products.product_id", ondelete="CASCADE"))
     similarity_score = Column(Float)
 
 

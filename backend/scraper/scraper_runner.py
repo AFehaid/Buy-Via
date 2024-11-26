@@ -1,12 +1,11 @@
-# scraper_runner.py
 from scraper.scraper import AmazonScraper, JarirScraper, ExtraScraper
-from models import Store, Product, Category, ProductGroup, engine
+from models import Store, Product, Category, engine
 from sqlalchemy.orm import Session
 import json
 import time
 from selenium.common.exceptions import WebDriverException, TimeoutException, NoSuchElementException
 import os
-
+from datetime import datetime, timezone  # Import timezone here
 
 
 class ScraperManager:
@@ -51,23 +50,37 @@ class ScraperManager:
             db.commit()
             db.refresh(category)
 
-        # Create and add the product
-        product = Product(
-            title=data["title"],
-            price=price,  # Use the parsed or None price
-            info=data["info"],
-            search_value=data["search_value"],
-            link=data["link"],
-            image_url=data["image_url"],
-            availability=True,
-            store_id=store.store_id,
-            category_id=category.category_id,
-        )
-        db.add(product)
+        # Check if the product already exists in the same store
+        existing_product = db.query(Product).filter_by(title=data["title"], store_id=store.store_id).first()
+        if existing_product:
+            # Skip updating if the search_value is different
+            if existing_product.search_value != data["search_value"]:
+                print(f"Skipping update for '{data['title']}' as it belongs to a different search value.")
+                return
+
+            # Update the product only if the price has changed
+            if existing_product.price != price:
+                existing_product.price = price
+                existing_product.last_updated = datetime.now(timezone.utc)  # Update the last_updated field
+                print(f"Product '{data['title']}' price updated in the database.")
+        else:
+            # Create and add a new product if it doesn't exist
+            new_product = Product(
+                title=data["title"],
+                price=price,
+                info=data["info"],
+                search_value=data["search_value"],
+                link=data["link"],
+                image_url=data["image_url"],
+                availability=True,
+                store_id=store.store_id,
+                category_id=category.category_id,
+            )
+            db.add(new_product)
+            print(f"Product '{data['title']}' added to the database.")
+
+        # Commit changes to the database
         db.commit()
-        print(f"Product '{data['title']}' added to the database.")
-
-
 
     def scrape_all_products(self):
         """Scrape products and store them in the database."""
