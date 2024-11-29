@@ -55,6 +55,8 @@ class StoreScraper:
     def quit_driver(self):
         if self.driver:
             self.driver.quit()
+            self.driver = None
+
 
     def clean_image_url(self, image_url):
         if image_url.startswith("//"):
@@ -187,8 +189,6 @@ class JarirScraper(StoreScraper):
 
         except (TimeoutException, WebDriverException) as e:
             print(f"Error during scraping: {e}")
-        finally:
-            self.quit_driver()
 
 
 class AmazonScraper(StoreScraper):
@@ -260,8 +260,6 @@ class AmazonScraper(StoreScraper):
 
         except (TimeoutException, WebDriverException) as e:
             print(f"Error during scraping: {e}")
-        finally:
-            self.quit_driver()
 
 
 class ExtraScraper(StoreScraper):
@@ -298,7 +296,8 @@ class ExtraScraper(StoreScraper):
                             raw_price = product.find_element(By.CLASS_NAME, "price").text.replace("SAR", "").strip()
                             price = self.normalize_price(raw_price)
                             info = "; ".join([li.text for li in product.find_elements(By.CSS_SELECTOR, "ul.product-stats li")])
-                            image_url = product.find_element(By.CSS_SELECTOR, "picture img").get_attribute("src")
+                            raw_image_url = product.find_element(By.CSS_SELECTOR, "picture img").get_attribute("src")
+                            image_url = self.clean_image_url(raw_image_url)  # Clean the image URL
 
                             product_key = (title, link)
                             if product_key not in unique_products:
@@ -329,5 +328,3 @@ class ExtraScraper(StoreScraper):
 
         except (TimeoutException, WebDriverException) as e:
             print(f"Error during scraping: {e}")
-        finally:
-            self.quit_driver()

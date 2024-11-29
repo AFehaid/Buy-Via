@@ -9,7 +9,7 @@ class ScraperManager:
             "amazon": AmazonScraper,
         }
 
-    def scrape_all_stores(self, search_value): 
+    def scrape_all_stores(self, search_value):
         for store_name, scraper_class in self.scrapers.items():
             scraper = scraper_class(store_name)
             print(f"Starting scraping for {store_name}")

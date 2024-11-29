@@ -51,7 +51,7 @@ class Product(Base):
     title = Column(String, index=True, nullable=False)
     title_in_arabic = Column(String, nullable=True)  # Empty for now
     price = Column(Float, nullable=True)
-    info = Column(String) 
+    info = Column(String, nullable=True) 
     search_value = Column(String, index=True)
     link = Column(String)
     image_url = Column(String)
