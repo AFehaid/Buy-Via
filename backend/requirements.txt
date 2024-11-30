@@ -1,4 +1,4 @@
-# C:\Users\afeha\Documents\My Documents\Buy-Via\backend\requirements.txt
+# \Buy-Via\backend\requirements.txt
 selenium==4.0.0
 urllib3==1.26.7
 protobuf==3.20.*

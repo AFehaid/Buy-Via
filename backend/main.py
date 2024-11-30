@@ -1,4 +1,4 @@
-# C:\Users\afeha\Documents\My Documents\Buy-Via\backend\main.py
+# \Buy-Via\backend\main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
