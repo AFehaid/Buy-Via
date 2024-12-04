@@ -260,6 +260,34 @@ class AmazonScraper(StoreScraper):
 
         except (TimeoutException, WebDriverException) as e:
             print(f"Error during scraping: {e}")
+    def scrape_availability(self, product_link):
+        """
+        Check the availability of a product on Amazon based on its link.
+        :param product_link: The URL of the product page.
+        :return: True if the product is available, False otherwise.
+        """
+        try:
+            # Navigate to the product link
+            self.driver.get(product_link)
+
+            # Check if the "Currently unavailable" span is present
+            try:
+                WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located(
+                        (By.CSS_SELECTOR, ".a-size-medium a-color-success")
+                    )
+                )
+                return False  # Product is unavailable
+            except TimeoutException:
+                pass
+
+            # If neither element is found, log and assume unavailability
+            print(f"[Amazon] Availability status could not be determined for {product_link}")
+            return True  # Assume the product is available by default
+
+        except Exception as e:
+            print(f"[Amazon] Error checking availability for {product_link}: {e}")
+            return False
 
 
 class ExtraScraper(StoreScraper):

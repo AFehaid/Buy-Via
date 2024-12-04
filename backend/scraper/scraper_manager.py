@@ -1,3 +1,4 @@
+# backend/scraper/scraper_manager.py
 from scraper.scraper import AmazonScraper, JarirScraper, ExtraScraper
 from models import Store, Product, Category, engine
 from sqlalchemy.orm import Session

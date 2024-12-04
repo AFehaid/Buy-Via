@@ -1,4 +1,4 @@
-# srcraper_csv.py
+# backend/scraper/scraper_csv.py
 import json
 import csv
 import os
@@ -76,7 +76,11 @@ class ScraperManager:
 
         print(f"Data saved to {self.output_file}")
 
-
 if __name__ == "__main__":
-    manager = ScraperManager("search_values.json")
+    # Use absolute path for the search_values_file
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    search_values_file = os.path.join(base_dir, "search_values_csv.json")
+    
+    manager = ScraperManager(search_values_file)
     manager.scrape_all_products()
+
