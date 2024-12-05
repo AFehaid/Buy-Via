@@ -21,6 +21,7 @@ class ProductResponse(BaseModel):
     link: str
     image_url: str
     store_id: int
+    availability : bool
 
     class Config:
         orm_mode = True
