@@ -2,3 +2,4 @@
 venv/
 backend/backend/buy_via.db
 backend/backend/__pycache__/
+buy_via.db

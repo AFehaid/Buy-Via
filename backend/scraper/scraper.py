@@ -192,9 +192,9 @@ class JarirScraper(StoreScraper):
 
     def scrape_availability(self, product_link):
         """
-        Check the availability of a product on Jarir's website.
+        Check the availability of a product on the store's website.
         :param product_link: The URL of the product page.
-        :return: False if neither "Notify Me When It’s Available" nor "Add to Cart" buttons are present.
+        :return: True if the product is available, False otherwise.
         """
         try:
             # Navigate to the product link
@@ -202,31 +202,31 @@ class JarirScraper(StoreScraper):
 
             try:
                 # Check for "Notify Me When It’s Available" button
-                notify_me_button = self.driver.find_elements(
-                    By.CSS_SELECTOR,
-                    "button.button--primary.button--fluid.button--secondary"
+                notify_me_buttons = WebDriverWait(self.driver, 5).until(
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "button.button--primary.button--fluid.button--secondary"))
                 )
-
-                # Check for "Add to Cart" button
-                add_to_cart_button = self.driver.find_elements(
-                    By.CSS_SELECTOR,
-                    "button.button--add-to-cart.button--primary.button--fluid"
-                )
-
-                # If neither button is present, return False
-                if not notify_me_button and not add_to_cart_button:
-                    return False
-
             except TimeoutException:
-                # If buttons are not found, assume unavailable
+                notify_me_buttons = []
+
+            try:
+                # Check for "Add to Cart" button
+                add_to_cart_buttons = WebDriverWait(self.driver, 5).until(
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "button.button--add-to-cart.button--primary.button--fluid"))
+                )
+            except TimeoutException:
+                add_to_cart_buttons = []
+
+            # If neither button is present, return False
+            if not notify_me_buttons and not add_to_cart_buttons:
                 return False
 
-            # If at least one button is found, return True (product is available or notification available)
+            # If at least one button is found, return True
             return True
 
         except Exception as e:
-            print(f"[Jarir] Error checking availability for {product_link}: {e}")
+            print(f"[{self.store_name}] Error checking availability for {product_link}: {e}")
             return False
+
 
 
 
