@@ -1,4 +1,4 @@
-# C:\Users\afeha\Documents\My Documents\Buy-Via\backend\dependencies\deps.py
+# Buy-Via\backend\dependencies\deps.py
 from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, status
