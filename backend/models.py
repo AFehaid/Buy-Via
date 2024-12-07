@@ -63,6 +63,7 @@ class Product(Base):
     store = relationship("Store", back_populates="products")
     category = relationship("Category", back_populates="products")
     group = relationship("ProductGroup", back_populates="products")
+    price_histories = relationship("ProductPriceHistory", back_populates="product", cascade="all, delete-orphan")
 
 
 class Store(Base):
@@ -121,6 +122,15 @@ class ProductMatch(Base):
     product_id_1 = Column(Integer, ForeignKey("products.product_id", ondelete="CASCADE"))
     product_id_2 = Column(Integer, ForeignKey("products.product_id", ondelete="CASCADE"))
     similarity_score = Column(Float)
+
+class ProductPriceHistory(Base):
+    __tablename__ = "product_price_histories"
+    history_id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.product_id", ondelete="CASCADE"))
+    old_price = Column(Float, nullable=False)
+    new_price = Column(Float, nullable=False)
+    change_date = Column(DateTime, default=datetime.now(timezone.utc))
+    product = relationship("Product", back_populates="price_histories")
 
 
 # Create all tables
