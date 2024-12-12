@@ -1,0 +1,198 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+*{
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  
+}
+
+/* Navbar container adjustments */
+.nav-menu {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #007bff;
+    padding: 10px 3%;
+    position: relative;
+}
+/* Wrapper for search and account button */
+.right-section {
+    display: flex;
+    align-items: center;
+    margin-left: auto; /* Push the section to the far right */
+    gap: 15px; /* Space between search bar and account button */
+}
+
+/* Wrapper for nav links */
+.wrapper {
+    display: flex;
+    justify-content: center; /* Centers the nav links */
+    align-items: center;
+    flex: 1; /* Take available space between the logo and the right section */
+}
+
+/* Navbar links styling */
+.nav-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    margin-left: 264px;
+    position: relative; /* Prevent layout changes */
+}
+
+/* Navbar links styling */
+.nav-links li {
+    list-style: none;
+    position: relative;
+    margin: 0 20px;
+}
+
+
+.nav-links a {
+    color: #f2f2f2;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 420;
+    padding: 9px 15px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: #007bff;
+    background-color: #fff;
+    transition: 0.5s;
+}
+.navbar.navbar-fixed-top {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+  }
+/* Account button styling */
+.account-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    
+}
+
+.account-btn:hover {
+    background: none;
+    
+    transform: scale(1.1);
+}
+
+.account-btn::after {
+    display: none; /* Hides the arrow */
+}
+
+/* Right section (search and account button) */
+.right-section {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 15px;
+    flex-shrink: 0; /* Prevent shrinking */
+    min-width: 400px; /* Reserve space for expanding search bar */
+}
+
+/* Search bar styling */
+.box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Align to the right */
+}
+
+.nav-menu .logo{
+    margin-right: 0%;
+}
+
+
+
+  .input {
+    padding: 13px;
+    padding-left: 40px; /* Space for the icon */
+    width: 50px; /* Small when closed */
+    height: 40px;
+    background: none;
+    border: 2px solid white;
+    border-radius: 50px;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    color: rgb(255, 255, 255);
+    outline: none;
+    transition: width 0.3s, border-radius 0.3s, background 0.3s;
+    background-image: url('../../assets/search_icon.png'); /* Add search icon */
+    background-size: 25px 25px; /* Adjust icon size */
+    background-position: center; /* Position icon inside the input */
+    background-repeat: no-repeat;
+}
+
+.input.open {
+    width: 300px; /* Expanded when open */
+    background: #007bff;
+    border-radius: 40px;
+    background-image: none; /* Remove icon when open */
+}
+
+.input::placeholder {
+    color: white;
+}
+
+.box:hover input {
+    width: 300px;
+    background: #007bff;
+    border-radius: 40px;
+    transition: 0.4s;
+}
+
+
+
+.dropdown .dropdown-menu {
+    text-align: center;
+    color: #f2f2f2;
+    text-decoration: none;
+    padding: 9px 15px;
+    border-radius: 8px;    
+}
+.dropdown .dropdown-menu .dropdown-items {
+    color: #636363;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 420;
+    padding: 4px auto;
+    transition: all 0.2s ease;
+    
+}
+
+.dropdown .dropdown-menu .dropdown-items:hover {
+    background-color: #007bff;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 17px;
+    font-weight: 420;
+    transition: all 0.2s ease;
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+

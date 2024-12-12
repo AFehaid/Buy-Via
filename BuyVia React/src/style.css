@@ -1,0 +1,28 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: sans-serif;
+}
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+  }
+  
+  .App {
+    text-align: center;
+    
+  }
+  
+  .App-main {
+    padding-top: 0rem; /*enough space towards the top to be not overlapped by navbar*/
+    display: flex; 
+    justify-content: center;
+    flex-direction: column;
+    text-align: left;
+    align-items: center;
+  }
+  
+  
+
