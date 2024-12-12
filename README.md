@@ -1,10 +1,10 @@
 # Buy-Via
-* Navigate to "\BuyVia React\"
+* Navigate to "/FrontEnd/"
   ```sh
   npm run dev
   ```
 
-* Navigate to "'.\Buy-Via\Buy-Via-master (1)\Buy-Via-master"
+* Navigate to "'./backend/"
   ```sh
   . venv/Scripts/activate
   uvicorn main:app --reload
