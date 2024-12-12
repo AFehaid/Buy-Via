@@ -1,7 +1,7 @@
 # backend/routers/auth.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from datetime import timedelta, datetime, timezone
 from jose import jwt
 from sqlalchemy.orm import Session
@@ -9,8 +9,7 @@ from dependencies.deps import db_dependency, bcrypt_context
 from models import User
 import os
 from dotenv import load_dotenv
-from fastapi.security import OAuth2PasswordRequestForm
-from fastapi import Depends
+
 
 
 load_dotenv()
@@ -82,3 +81,20 @@ async def login_for_access_token(
     token = create_access_token(user.username, user.user_id, timedelta(minutes=30))
     return {"access_token": token, "token_type": "bearer"}
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def verify_token(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=403, detail="Token is invalid or expired")
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=403, detail="Token is invalid or expired")
+
+
+@router.get("/verify-token/")
+async def verify_user_token(token: str):
+    verify_token(token=token)
+    return {"valid": "true"}

@@ -75,3 +75,17 @@ def search_products(
         raise HTTPException(status_code=404, detail="No products found matching the query")
 
     return paginated_results
+
+@router.get("/products/", response_model=ProductResponse)
+def get_product(
+    product_id: int = Query(..., description="The ID of the product to retrieve"),  # Use ... to make it required
+    db: Session = Depends(get_db)
+):
+    # Query the database for the exact product
+    product = db.query(Product).filter(Product.product_id == product_id).first()
+
+    # Raise an error if the product is not found
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return product
