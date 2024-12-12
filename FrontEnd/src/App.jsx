@@ -21,9 +21,9 @@ function App() {
   const [activeForm, setActiveForm] = useState("signIn");
 
   return (
-    
+    // TEST
     <div>
-      // TEST
+      
       <AuthProvider>
       <Router>
       <Navbar />
