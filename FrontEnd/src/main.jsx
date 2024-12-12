@@ -6,6 +6,7 @@ import "./style.css"
 
 
 createRoot(document.getElementById('root')).render(
+  //Test2
   <StrictMode>
     <App />
   </StrictMode>,
