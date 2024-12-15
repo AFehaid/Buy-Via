@@ -5,6 +5,9 @@ from models import Product
 from dependencies.deps import get_db
 from typing import List
 from pydantic import BaseModel
+from fastapi.responses import JSONResponse
+from sqlalchemy.sql import func
+
 
 # Router setup
 router = APIRouter(
@@ -21,13 +24,19 @@ class ProductResponse(BaseModel):
     link: str
     image_url: str
     store_id: int
-    availability : bool
+    availability: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # Replaces `orm_mode`
 
-# Search endpoint
-@router.get("/", response_model=List[ProductResponse])
+class SearchResponse(BaseModel):
+    total_count: int
+    products: List[ProductResponse]  # Reuse the existing ProductResponse model
+
+    class Config:
+        from_attributes = True  # Replaces `orm_mode`
+
+@router.get("/", response_model=SearchResponse)
 def search_products(
     query: str = Query(..., min_length=1, description="Search query"),
     page: int = Query(1, ge=1, description="Page number"),
@@ -35,8 +44,8 @@ def search_products(
     db: Session = Depends(get_db)
 ):
     """
-    Improved search for products based on title and info fields.
-    Prioritize results with adjacent word matches first.
+    Search for products based on title and info fields.
+    Returns the total count of results and a paginated list of products.
     """
     # Split the query into individual words
     words = query.split()
@@ -49,7 +58,7 @@ def search_products(
         Product.title.ilike(f"%{query}%"),  # Adjacent match in title
         Product.info.ilike(f"%{query}%")   # Adjacent match in info
     )
-  
+    
     non_adjacent_conditions = [
         or_(
             Product.title.ilike(f"%{word}%"),
@@ -67,6 +76,10 @@ def search_products(
     # Combine results: adjacent first, then non-adjacent
     combined_results = adjacent_matches.union_all(non_adjacent_matches)
 
+    # Create a subquery to calculate the total count
+    total_count_query = combined_results.subquery()  # Convert to subquery
+    total = db.query(func.count()).select_from(total_count_query).scalar()  # Fetch the total count as an integer
+
     # Apply pagination
     paginated_results = combined_results.offset(offset).limit(page_size).all()
 
@@ -74,7 +87,11 @@ def search_products(
     if not paginated_results:
         raise HTTPException(status_code=404, detail="No products found matching the query")
 
-    return paginated_results
+    # Return the paginated results with the total count
+    return {
+        "total_count": total,
+        "products": [ProductResponse.from_orm(product) for product in paginated_results]
+    }
 
 @router.get("/products/", response_model=ProductResponse)
 def get_product(
