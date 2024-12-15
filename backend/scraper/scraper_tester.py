@@ -4,9 +4,9 @@ from scraper import ExtraScraper, AmazonScraper, JarirScraper
 class ScraperManager:
     def __init__(self):
         self.scrapers = {
+            "amazon": AmazonScraper,
             "jarir": JarirScraper,
             "extra": ExtraScraper,
-            "amazon": AmazonScraper,
         }
 
     def scrape_all_stores(self, search_value):

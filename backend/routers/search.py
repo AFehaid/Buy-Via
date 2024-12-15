@@ -49,7 +49,7 @@ def search_products(
         Product.title.ilike(f"%{query}%"),  # Adjacent match in title
         Product.info.ilike(f"%{query}%")   # Adjacent match in info
     )
-    
+  
     non_adjacent_conditions = [
         or_(
             Product.title.ilike(f"%{word}%"),
@@ -87,5 +87,4 @@ def get_product(
     # Raise an error if the product is not found
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-
     return product

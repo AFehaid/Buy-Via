@@ -9,8 +9,7 @@ from dependencies.deps import db_dependency, bcrypt_context
 from models import User
 import os
 from dotenv import load_dotenv
-
-
+from jose.exceptions import JWTError
 
 load_dotenv()
 

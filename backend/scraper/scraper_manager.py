@@ -30,6 +30,11 @@ class ScraperManager:
 
     def store_to_database(self, db: Session, data: dict):
         """Store a scraped product in the database and log actions."""
+        # Extract additional keys for printing
+        current_index = data.get("current_index")
+        total_values = data.get("total_values")
+
+        # Convert price to float or None
         try:
             price = float(data["price"])
         except (ValueError, TypeError):
@@ -98,18 +103,22 @@ class ScraperManager:
                 existing_product.image_url = image_url
                 updated = True
 
-            # If any updates have occurred
             if updated:
+                # Update search_value if changed
                 if existing_product.search_value != search_value:
                     messages.append(f"Search value updated to {search_value}")
                     existing_product.search_value = search_value
 
                 existing_product.last_updated = datetime.now(timezone.utc)
-                print(f"[{store_name}] Product updated in the database: '{title}'")
+                db.commit()
+
+                # Print final status with product_id
+                print(f"[{search_value}][{current_index}/{total_values}][{store_name}][Product ID: {existing_product.product_id}] {title}")
                 for msg in messages:
                     print(f" - {msg}")
             else:
-                print(f"[{store_name}] Product skipped (no changes): '{title}'")
+                # Product is unchanged
+                print(f"[{search_value}][{current_index}/{total_values}][{store_name}][Product ID: {existing_product.product_id}] {title}: No changes.")
         else:
             # Create new product
             new_product = Product(
@@ -124,23 +133,22 @@ class ScraperManager:
                 category_id=category.category_id,
             )
             db.add(new_product)
-            print(f"[{store_name}] Product '{title}' added to the database.")
+            db.commit()  # commit to get generated product_id
+            print(f"[{search_value}][{current_index}/{total_values}][{store_name}][Product ID: {new_product.product_id}] {title}: Added to database.")
 
-        # Commit changes to the database
-        db.commit()
-
-
-    def run_scraper_for_value(self, scraper, search_value):
+    def run_scraper_for_value(self, scraper, search_value, current_index, total_values):
         """Run a single scraper for a given search value in a separate thread."""
         with Session(engine) as db:
-            print(f"Using scraper: {scraper.store_name}")
+            # Each store has its own WebDriver instance
+            print(f"[{search_value}][{current_index}/{total_values}] Using scraper: {scraper.store_name}")
             retries = 3
             while retries > 0:
                 try:
-                    # Ensure driver is set up
                     if not scraper.driver:
                         scraper.driver = scraper.setup_driver()
+
                     for product in scraper.scrape_products(search_value):
+                        # Include the index/total for printing
                         product_data = {
                             "store": product["store"],
                             "title": product["title"],
@@ -149,18 +157,21 @@ class ScraperManager:
                             "search_value": search_value,
                             "link": product["link"],
                             "image_url": product["image_url"],
+                            "current_index": current_index,
+                            "total_values": total_values
                         }
                         self.store_to_database(db, product_data)
                     break  # Exit retry loop if scraping is successful
+
                 except Exception as e:
                     retries -= 1
                     print(
-                        f"Error with {scraper.store_name} while scraping '{search_value}': {e}. Retries left: {retries}"
+                        f"[{search_value}][{current_index}/{total_values}][{scraper.store_name}] Error: {e}. Retries left: {retries}"
                     )
                     scraper.quit_driver()  # Quit the driver to reset state
                     if retries == 0:
                         print(
-                            f"Failed to scrape {scraper.store_name} for '{search_value}' after multiple attempts. Skipping."
+                            f"[{search_value}][{current_index}/{total_values}][{scraper.store_name}] Failed after multiple attempts. Skipping."
                         )
                     else:
                         time.sleep(5)  # Wait before retrying
@@ -169,21 +180,33 @@ class ScraperManager:
             scraper.quit_driver()
 
     def scrape_all_products(self):
-        """Scrape products and store them in the database simultaneously for each store."""
+        """Scrape products and store them in the database for each store in parallel."""
+        start_time = time.time()  # Start timing
         search_values = self.load_search_values()
+        total_values = len(search_values)
 
-        for search_value in search_values:
-            print(f"\nStarting scraping for search value: '{search_value}'")
+        for i, search_value in enumerate(search_values, start=1):
+            print(f"\nStarting scraping for search value: '{search_value}' ({i}/{total_values})")
 
-            # Run each store scraper in parallel
+            # Run each store scraper in parallel (no waiting on each other)
             with ThreadPoolExecutor(max_workers=len(self.scrapers)) as executor:
                 futures = []
                 for scraper in self.scrapers:
-                    futures.append(executor.submit(self.run_scraper_for_value, scraper, search_value))
+                    futures.append(executor.submit(
+                        self.run_scraper_for_value,
+                        scraper,
+                        search_value,
+                        i,
+                        total_values
+                    ))
 
-                # Wait for all threads to finish
+                # Wait for all threads to finish for this search_value
                 for future in futures:
                     future.result()
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"\nAll scraping completed in {elapsed_time:.2f} seconds.")
 
 if __name__ == "__main__":
     manager = ScraperManager("search_values.json")

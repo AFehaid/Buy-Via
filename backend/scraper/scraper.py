@@ -228,9 +228,6 @@ class JarirScraper(StoreScraper):
             return False
 
 
-
-
-
 class AmazonScraper(StoreScraper):
     def scrape_products(self, search_value, max_pages=5):
         encoded_search_value = urllib.parse.quote(search_value)
@@ -242,6 +239,7 @@ class AmazonScraper(StoreScraper):
                 print(f"Loading page {page} for Amazon - URL: {url}")
                 self.driver.get(url)
 
+                # Wait for the main slot to ensure page load
                 WebDriverWait(self.driver, 20).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div.s-main-slot"))
                 )
@@ -250,38 +248,59 @@ class AmazonScraper(StoreScraper):
                 unique_products = set()
 
                 def extract_products():
-                    product_elements = self.driver.find_elements(By.CSS_SELECTOR, "div.s-result-item[data-component-type='s-search-result']")
+                    # Each product is typically in 'div.s-result-item[data-component-type="s-search-result"]'
+                    product_elements = self.driver.find_elements(
+                        By.CSS_SELECTOR,
+                        "div.s-result-item[data-component-type='s-search-result']"
+                    )
                     for product in product_elements:
                         try:
-                            # Extract the product title
-                            title_elem = product.find_element(By.CSS_SELECTOR, "h2 .a-link-normal")
-                            title = title_elem.text
+                            # --- Title & Link ---
+                            # Common pattern: <a class="a-link-normal s-line-clamp-4..." ...><h2 ...><span>title</span></h2></a>
+                            # Fallback: Some might still have h2 with .a-link-normal
+                            try:
+                                link_elem = product.find_element(By.CSS_SELECTOR, "a.a-link-normal.s-line-clamp-4")
+                            except NoSuchElementException:
+                                # fallback
+                                link_elem = product.find_element(By.CSS_SELECTOR, "h2 a.a-link-normal")
 
-                            # Extract the product link
-                            link = title_elem.get_attribute("href")
+                            title = link_elem.text.strip()
+                            link = link_elem.get_attribute("href")
 
-                            # Extract the product price
+                            # --- Price ---
+                            # Attempt the older approach first
                             raw_price = "N/A"
                             try:
                                 price_whole = product.find_element(By.CSS_SELECTOR, "span.a-price-whole").text
                                 price_fraction = product.find_element(By.CSS_SELECTOR, "span.a-price-fraction").text
                                 raw_price = f"{price_whole}.{price_fraction}"
                             except NoSuchElementException:
-                                pass
+                                # Fallback: look for the 'span.a-offscreen' (the entire price in one element)
+                                try:
+                                    offscreen = product.find_element(By.CSS_SELECTOR, "span.a-price span.a-offscreen")
+                                    raw_price = offscreen.text  # e.g. "SAR 1,769.99"
+                                except NoSuchElementException:
+                                    pass
+
                             price = self.normalize_price(raw_price)
 
-                            # Extract the product image URL
-                            image_url = product.find_element(By.CSS_SELECTOR, "img.s-image").get_attribute("src")
+                            # --- Image URL ---
+                            # Usually: <img class="s-image" ...>
+                            try:
+                                image_elem = product.find_element(By.CSS_SELECTOR, "img.s-image")
+                                image_url = image_elem.get_attribute("src")
+                            except NoSuchElementException:
+                                image_url = ""
 
                             product_key = (title, link)
-                            if product_key not in unique_products:
+                            if product_key not in unique_products and title:
                                 unique_products.add(product_key)
                                 yield {
                                     "store": self.store_name,
                                     "title": title,
                                     "link": link,
                                     "price": price,
-                                    "info": "N/A",  # Placeholder for additional product info
+                                    "info": "N/A",
                                     "image_url": image_url
                                 }
                         except (NoSuchElementException, WebDriverException):
@@ -289,6 +308,7 @@ class AmazonScraper(StoreScraper):
 
                 yield from extract_products()
 
+                # Attempt pagination
                 try:
                     next_button = self.driver.find_element(By.CSS_SELECTOR, "a.s-pagination-next")
                     if not next_button.is_enabled():
@@ -301,37 +321,7 @@ class AmazonScraper(StoreScraper):
         except (TimeoutException, WebDriverException) as e:
             print(f"Error during scraping: {e}")
 
-    def scrape_availability(self, product_link):
-        """
-        Check the availability of a product on Amazon based on its link.
-        :param product_link: The URL of the product page.
-        :return: True if the product is available, False otherwise.
-        """
-        try:
-            # Navigate to the product link
-            self.driver.get(product_link)
 
-            # Use a shorter wait time for availability elements
-            try:
-                availability_element = WebDriverWait(self.driver, 5).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, ".a-size-medium.a-color-success"))
-                )
-
-                # Check text content using JavaScript for faster access
-                availability_text = self.driver.execute_script(
-                    "return arguments[0].textContent;", availability_element
-                ).strip()
-
-                # Return False if the element contains "Currently unavailable"
-                return "Currently unavailable" not in availability_text
-
-            except TimeoutException:
-                # If the availability element is not found, assume available
-                return True
-
-        except Exception as e:
-            print(f"[Amazon] Error checking availability for {product_link}: {e}")
-            return False
 
 class ExtraScraper(StoreScraper):
     def scrape_products(self, search_value, max_pages=5):
