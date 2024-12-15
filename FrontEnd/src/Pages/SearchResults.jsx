@@ -27,9 +27,9 @@ const fetchResults = async () => {
         console.log("API Response:", data); // Logs the response
         console.log("Query:", query);
 
-        if (Array.isArray(data)) {
-            setResults(data);  // Directly set the array as results
-            setTotalResults(1000);  // Use the length of the array for totalResults
+        if (data && data.products) {
+            setResults(data.products);  // Set the products array
+            setTotalResults(data.total_count);  // Use total_count from the response
         } else {
             setResults([]);
             setTotalResults(0);

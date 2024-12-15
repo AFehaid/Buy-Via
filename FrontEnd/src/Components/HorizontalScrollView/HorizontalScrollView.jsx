@@ -5,6 +5,8 @@ import "./HorizontalScrollView.css";
 const HorizontalScrollView = ({ prompt }) => {
   const [items, setItems] = useState([]);
   const navigate = useNavigate();
+  const [totalResults, setTotalResults] = useState(0);
+  
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -14,16 +16,18 @@ const HorizontalScrollView = ({ prompt }) => {
         );
         const data = await response.json();
 
-        if (Array.isArray(data)) {
-          setItems(data);
-        } else {
-          console.error("Unexpected API response format:", data);
+        if (data && data.products) {
+          setItems(data.products);  // Set the products array
+          setTotalResults(data.total_count);  // Use total_count from the response
+      } else {
           setItems([]);
-        }
-      } catch (error) {
-        console.error("Error fetching items:", error);
-        setItems([]);
+          setTotalResults(0);
       }
+  } catch (error) {
+      console.error('Error fetching search results:', error);
+      setResults([]);
+      setTotalResults(0);
+  }
     };
 
     fetchItems();
