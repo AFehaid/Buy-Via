@@ -1,8 +1,6 @@
 import "../../style.css"
 import SimpleImageSlider from "react-simple-image-slider";
-import a1 from "../../assets/a1.jpg"
-import a2 from "../../assets/a2.jpg"
-import a3 from "../../assets/a3.jpg"
+
 import a6 from "../../assets/a6.jpg"
 import a5 from "../../assets/a5.jpg"
 
