@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./HorizontalScrollView.css";
+import Jarir from "../../assets/Jarir.png"
+import Extra from "../../assets/Extra.png"
+import AMZN from "../../assets/AMZN.png"
+import EmptyPNG from "../../assets/Empty1.png"
+
 
 const HorizontalScrollView = ({ prompt }) => {
   const [items, setItems] = useState([]);
@@ -44,6 +49,20 @@ const HorizontalScrollView = ({ prompt }) => {
   const handleViewProduct = (productId) => {
     navigate(`/product/${productId}`);
   };
+  const AJX = (store_id) => {
+    if(store_id == 1){
+      return AMZN
+    }
+    else if(store_id == 2){
+      return Jarir
+    }
+    else if(store_id == 3){
+      return Extra
+    }
+    else{
+      return null
+    }
+  }
 
   return (
     <div className="horizontal-scroll-view">
@@ -58,8 +77,13 @@ const HorizontalScrollView = ({ prompt }) => {
               <div key={index} className="item-card">
                 <img src={item.image_url} alt={item.title} />
                 <h3>{item.title}</h3>
-                <p className="price">{item.price !== null ? `${item.price.toFixed(2)} SAR` : "Price not available"}</p>
-                <p className="available">{item.availability !== false ? `` : "Not available"}</p>
+                <div className="Test1">
+                  { item.price !== null ?
+                <img className="Test" src={AJX(item.store_id)}></img>
+                : null}
+                <p className="price">{item.price !== null ? `${item.price.toFixed(2)} SAR` : <p className="available">{item.price == null ? `Price not available` : null} </p>
+              }</p>
+                </div>
                 <button
                   className={item.availability !== false ? `product-link` : `product-link-false`}
                   onClick={() => handleViewProduct(item.product_id)}
