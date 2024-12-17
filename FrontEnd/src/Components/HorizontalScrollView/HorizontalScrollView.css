@@ -10,15 +10,18 @@ body, html {
     max-width: 100vw; /* Ensure main content doesn't exceed the viewport width */
     overflow-x: hidden; /* Prevent horizontal scroll */
   }
-  .Test{
+  .store-img{
     margin-top: 7px;
     max-height: 15px;
     max-width: 30px;
   }
   
-  .Test1{
+  .img-price{
     display: flex;
     justify-content: center;
+  }
+  .Loading{
+    text-align: center;
   }
   /* === removing default button style ===*/
 .button5 {

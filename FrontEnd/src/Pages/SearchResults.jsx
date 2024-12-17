@@ -52,6 +52,9 @@ const fetchResults = async () => {
     const handlePageSizeChange = (newPageSize) => {
         navigate(`/search?query=${query}&page=1&page_size=${newPageSize}`);
     };
+    const handleViewProduct = (productId) => {
+        navigate(`/product/${productId}`);
+      };
 
     const totalPages = Math.ceil(totalResults / pageSize);
 
@@ -73,7 +76,8 @@ const fetchResults = async () => {
                         {result.price !== null ? `${result.price.toFixed(2)}${sar}` : "Price not available"}
                     </p>
                     <p className="available">{result.availability !== false ? `` : "not available"}</p>
-                    <a href={result.link} target="_blank" rel="noopener noreferrer" className={result.availability !== false ? `product-link` : `product-link-false`}>
+                    <a target="_blank" rel="noopener noreferrer" className={result.availability !== false ? `product-link` : `product-link-false`} 
+                    onClick={() => handleViewProduct(result.product_id)}>
                         View Product
                     </a>
                 </div>
