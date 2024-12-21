@@ -6,6 +6,16 @@ from sqlalchemy.orm import Session
 from dependencies.deps import db_dependency, get_current_user
 from models import Alert, Product, User
 
+'''
+in the future, we will implement the email sending functionality in other file
+
+we will use this library to send email
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from dotenv import load_dotenv
+'''
+
 router = APIRouter(
     prefix="/alerts",
     tags=["alerts"]

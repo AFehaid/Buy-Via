@@ -1,3 +1,4 @@
+# backend\scraper\availability_manager.py
 from concurrent.futures import ThreadPoolExecutor
 from sqlalchemy.orm import Session
 from scraper.scraper import AmazonScraper, JarirScraper, ExtraScraper
