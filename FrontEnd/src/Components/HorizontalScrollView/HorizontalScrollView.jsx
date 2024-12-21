@@ -50,18 +50,15 @@ const HorizontalScrollView = ({ prompt }) => {
     navigate(`/product/${productId}`);
   };
   const AJX = (store_id) => {
-    if(store_id == 1){
+    switch(store_id){
+      case(1):
       return AMZN
-    }
-    else if(store_id == 2){
+      case(2):
       return Jarir
-    }
-    else if(store_id == 3){
+      case(3):
       return Extra
-    }
-    else{
-      return null
-    }
+      default:
+      return null}
   }
 
   return (
@@ -77,9 +74,9 @@ const HorizontalScrollView = ({ prompt }) => {
               <div key={index} className="item-card">
                 <img src={item.image_url} alt={item.title} />
                 <h3>{item.title}</h3>
-                <div className="Test1">
+                <div className="img-price">
                   { item.price !== null ?
-                <img className="Test" src={AJX(item.store_id)}></img>
+                <img className="store-img" src={AJX(item.store_id)}></img>
                 : null}
                 <p className="price">{item.price !== null ? `${item.price.toFixed(2)} SAR` : <p className="available">{item.price == null ? `Price not available` : null} </p>
               }</p>
@@ -95,7 +92,7 @@ const HorizontalScrollView = ({ prompt }) => {
           </div>
         </>
       ) : (
-        <p>{prompt}.</p>
+        <p className="Loading">{prompt}.</p>
       )}
     </div>
   );

@@ -109,8 +109,15 @@ button:disabled {
 /* Product title */
 .product-title {
     font-size: 16px;
-    font-weight: bold;
     margin: 10px 0;
+    line-height: 1.4; /* Adjust the spacing between lines for readability */
+    max-height: 4.2em; /* Limit to 3 lines of text (line-height * 3) */
+    overflow: hidden; /* Prevent content from spilling out */
+    text-overflow: ellipsis; /* Adds '...' if text overflows */
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* Show up to 3 lines */
+    -webkit-box-orient: vertical;
+    word-wrap: break-word; /* Ensures long words wrap properly */
 }
 
 /* Product price */
@@ -128,6 +135,7 @@ button:disabled {
 /* Product link */
 .product-link {
     display: inline-block;
+    cursor: pointer;
     margin-top: 10px;
     padding: 5px 10px;
     font-size: 14px;
