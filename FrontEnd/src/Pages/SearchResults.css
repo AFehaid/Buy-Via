@@ -115,7 +115,7 @@ button:disabled {
     overflow: hidden; /* Prevent content from spilling out */
     text-overflow: ellipsis; /* Adds '...' if text overflows */
     display: -webkit-box;
-    -webkit-line-clamp: 3; /* Show up to 3 lines */
+    line-clamp: 3; /* Show up to 3 lines */
     -webkit-box-orient: vertical;
     word-wrap: break-word; /* Ensures long words wrap properly */
 }

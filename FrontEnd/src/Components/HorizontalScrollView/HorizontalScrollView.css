@@ -112,36 +112,37 @@ body, html {
   }
   .item-card:hover {
     transform: scale(1.05);
+    cursor: pointer;
 }
   .item-card img {
     width: 100%;
-    height: 50%; /* Fixed height for the image */
+    height: 55%; /* Fixed height for the image */
     object-fit:contain; /* Crop the image if it's too large */
     border-radius: 4px;
   }
   .item-card h3 {
-    font-size: 14px; /* Smaller font size for the name */
+    font-size: 15px; /* Smaller font size for the name */
     color: #333;
     margin: 5px 0;
-    white-space: nowrap; /* Prevent the text from wrapping */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;    
     overflow: hidden; /* Hide the overflowing text */
     text-overflow: ellipsis; /* Add ellipsis for long text */
   }
   
   .item-card .price {
-    font-size: 12px; /* Smaller font size for the price */
+    font-size: 15px; /* Smaller font size for the price */
     color: #555;
     margin: 5px 0;
     float: left;
   }
   
   .item-card .available {
-    font-size: 12px; /* Smaller font size for the price */
+    font-size: 14px; /* Smaller font size for the price */
     color: red; 
   }
-  .product-link{
-    background-color: #fff;
-  }
+
   .show-more-button {
     margin-left: 34px;
     font-size: 24px;

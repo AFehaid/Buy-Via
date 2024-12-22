@@ -71,7 +71,7 @@ const HorizontalScrollView = ({ prompt }) => {
         <>
           <div className="scroll-container">
             {items.map((item, index) => (
-              <div key={index} className="item-card">
+              <div key={index} className="item-card" onClick={() => handleViewProduct(item.product_id)}>
                 <img src={item.image_url} alt={item.title} />
                 <h3>{item.title}</h3>
                 <div className="img-price">
@@ -81,12 +81,6 @@ const HorizontalScrollView = ({ prompt }) => {
                 <p className="price">{item.price !== null ? `${item.price.toFixed(2)} SAR` : <p className="available">{item.price == null ? `Price not available` : null} </p>
               }</p>
                 </div>
-                <button
-                  className={item.availability !== false ? `product-link` : `product-link-false`}
-                  onClick={() => handleViewProduct(item.product_id)}
-                >
-                  View Product
-                </button>
               </div>
             ))}
           </div>

@@ -57,7 +57,8 @@ const ProductDetails = () => {
                 <p>{product.info != null ? product.info : example}</p>
                 </div>
         <div className='product-price-details'>
-            <span className='product-price-span'>{product.price} SAR</span>
+        <p>{product.price !== null ? `${product.price.toFixed(2)} SAR` : <p className="price-not-available">{product.price == null ? `Price not available` : null} </p>
+              }</p>
 
             <button 
                 className='buy-button' 

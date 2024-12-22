@@ -50,7 +50,7 @@
 }
 
 
-.nav-links a {
+.nav-links .nav-home {
     color: #f2f2f2;
     text-decoration: none;
     font-size: 18px;
@@ -60,11 +60,76 @@
     transition: all 0.3s ease;
 }
 
-.nav-links a:hover {
+.nav-links .nav-home:hover {
     color: #007bff;
     background-color: #fff;
     transition: 0.5s;
 }
+
+.categories-btn {
+    color: #f2f2f2;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 420;
+    padding: 9px 15px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+.nav-links .categories-btn:hover {
+    color: #f2f2f2;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 420;
+    padding: 9px 15px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+.category-menu {
+    display: block !important; /* Ensure it is visible during debugging */
+    position: absolute;
+    top: 70px;
+    left: 0;
+    width: 100%;
+    background-color: #fff;
+    color: #333;
+    padding: 20px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.category-content {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+.category-column {
+    margin: 10px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.category-header {
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.category-logo {
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+.category-item {
+    padding: 5px 0;
+    cursor: pointer;
+}
+
+.category-item:hover {
+    background-color: #f0f0f0;
+}
+
 .navbar.navbar-fixed-top {
     position: fixed;
     top: 0;
@@ -85,7 +150,6 @@
 
 .account-btn:hover {
     background: none;
-    
     transform: scale(1.1);
 }
 

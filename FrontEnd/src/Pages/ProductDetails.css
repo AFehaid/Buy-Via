@@ -36,13 +36,18 @@
   align-items: center;
 }
  
-.product-price-details .product-price-span {
+.product-price-details p {
   font-size: 26px;
   font-weight: 300;
   color: #43474D;
   margin-right: 20px;
+  padding-top: 14px;
+
 }
- 
+.product-price-details .price-not-available{
+  font-size: 21px;
+  color: red;
+}
 .buy-button {
     display: flex;
     align-items: center;
