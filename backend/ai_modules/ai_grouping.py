@@ -9,8 +9,9 @@ from .ai_service import AIService
 
 # Import your DB session and models
 # Adjust these imports as needed depending on how you structure your project
-from ..models import Product, ProductGroup
-from ..models import SessionLocal  # or wherever your SessionLocal is defined
+from models import Product, ProductGroup
+from models import SessionLocal
+
 
 
 def clean_title(title: str) -> str:

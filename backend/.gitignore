@@ -1,6 +1,5 @@
 .env
 venv/
 backend/backend/buy_via.db
-backend/backend/__pycache__/
-backend/scraper/__pycache__/
+**/__pycache__/
 buy_via.db
