@@ -5,19 +5,24 @@ import { FaUserCircle } from 'react-icons/fa';
 import Dropdown from 'react-bootstrap/Dropdown';
 import {useAuth}  from './AuthProvider';
 import { useNavigate } from 'react-router-dom';
+import { FiChevronDown } from 'react-icons/fi';
 
 const Navbar = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchText, setSearchText] = useState('');
-    const { isLoggedIn, setToken, logout } = useAuth();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { isLoggedIn, logout } = useAuth();
     const searchRef = useRef(null);
+    const menuRef = useRef(null);
+    const buttonRef = useRef(null);
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        logout(); // This will automatically clear the token and update isLoggedIn
-        navigate('/')
-      };
-    useEffect(() => {
+        logout();
+        navigate('/');
+    };
+
+      useEffect(() => {
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
                 setIsSearchOpen(false);
@@ -28,55 +33,12 @@ const Navbar = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleSearchSubmit = (e) => {
-        e.preventDefault();
-        if (searchText.trim()) {
-            navigate(`/search?query=${encodeURIComponent(searchText)}&page=1&page_size=10`);
-        }
-    };
-    const handleHomeClick = () => {
-        navigate('/'); // Navigate to the home page
-      };
-      const [isMenuOpen, setIsMenuOpen] = useState(false);
-      const menuRef = useRef(null);
-
-      const categories = [
-        {
-            header: 'Mobiles, Tablets & Wearables',
-            subcategories: ['Smartphones', 'Tablets', 'Smartwatches', 'Fitness Trackers', 'Accessories']
-        },
-        {
-            header: 'Appliances',
-            subcategories: ['Refrigerators', 'Washing Machines', 'Microwaves', 'Air Conditioners', 'Small Kitchen Appliances']
-        },
-        {
-            header: 'Computers & Laptops',
-            subcategories: ['Laptops', 'Desktops', 'Monitors', 'Keyboards & Mice', 'Computer Accessories']
-        },
-        {
-            header: 'Beauty & Personal Care',
-            subcategories: ['Makeup', 'Skincare', 'Haircare', 'Perfumes', 'Tools & Accessories']
-        },
-        {
-            header: 'Fashion',
-            subcategories: ['Men', 'Women', 'Kids', 'Footwear', 'Accessories']
-        },
-        {
-            header: 'Books',
-            subcategories: ['Fiction', 'Non-Fiction', 'Comics', 'Textbooks', 'Magazines']
-        },
-        {
-            header: 'Sports Equipment',
-            subcategories: ['Fitness Equipment', 'Outdoor Gear', 'Team Sports', 'Apparel', 'Accessories']
-        },
-        {
-            header: 'Travel and Luggage',
-            subcategories: ['Suitcases', 'Backpacks', 'Travel Accessories', 'Duffel Bags', 'Carry-Ons']
-        }
-    ];
-    useEffect(() => {
+      useEffect(() => {
         const handleClickOutside = (event) => {
-            if (menuRef.current && !menuRef.current.contains(event.target)) {
+            const isClickOutsideMenu = menuRef.current && !menuRef.current.contains(event.target);
+            const isClickOutsideButton = buttonRef.current && !buttonRef.current.contains(event.target);
+            
+            if (isClickOutsideMenu && isClickOutsideButton) {
                 setIsMenuOpen(false);
             }
         };
@@ -85,45 +47,91 @@ const Navbar = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        if (searchText.trim()) {
+            navigate(`/search?query=${encodeURIComponent(searchText)}`);
+            setIsSearchOpen(false);
+        }
+    };
+    const handleHomeClick = () => {
+        navigate('/'); 
+      };
+
+
+      const categories = [
+        {
+            header: 'Mobiles & Electronics',
+            icon: '📱',
+            subcategories: [
+                { name: 'Smartphones', featured: ['iPhone', 'Samsung', 'Xiaomi'] },
+                { name: 'Tablets', featured: ['iPad', 'Galaxy Tab', 'Huawei'] },
+                { name: 'Smartwatches', featured: ['Apple Watch', 'Galaxy Watch', 'Fitbit'] },
+                { name: 'Accessories', featured: ['Cases', 'Chargers', 'Screen Protectors'] }
+            ]
+        },
+        {
+            header: 'Home Appliances',
+            icon: '🏠',
+            subcategories: [
+                { name: 'Kitchen Appliances', featured: ['Refrigerators', 'Ovens', 'Dishwashers'] },
+                { name: 'Laundry', featured: ['Washers', 'Dryers', 'Irons'] },
+                { name: 'Climate Control', featured: ['AC', 'Heaters', 'Air Purifiers'] },
+                { name: 'Small Appliances', featured: ['Blenders', 'Coffee Makers', 'Toasters'] }
+            ]
+        },
+        {
+            header: 'Computers & Gaming',
+            icon: '💻',
+            subcategories: [
+                { name: 'Laptops', featured: ['MacBook', 'Gaming', 'Ultrabooks'] },
+                { name: 'Desktop PCs', featured: ['Gaming PCs', 'All-in-One', 'Monitors'] },
+                { name: 'Gaming', featured: ['Consoles', 'Games', 'Accessories'] },
+                { name: 'Computer Parts', featured: ['GPUs', 'CPUs', 'Storage'] }
+            ]
+        },
+        {
+            header: 'Fashion & Lifestyle',
+            icon: '👔',
+            subcategories: [
+                { name: 'Men\'s Fashion', featured: ['Casual', 'Formal', 'Sports'] },
+                { name: 'Women\'s Fashion', featured: ['Dresses', 'Tops', 'Accessories'] },
+                { name: 'Kids\' Fashion', featured: ['Boys', 'Girls', 'Infants'] },
+                { name: 'Footwear', featured: ['Sneakers', 'Formal', 'Sports'] }
+            ]
+        }
+    ];
+
+
     const toggleMenu = () => {
-        console.log("Menu toggled");
         setIsMenuOpen(!isMenuOpen);
     };
     return (
         <nav>
-            <div className="nav-menu navbar-fixed-top">
-                <a href="/"><Logo className="logo" /></a>
-                <div className="wrapper">
-                <ul className="nav-links">
-                    <li><a className='nav-home' href="/">Home</a></li>
-                    <li>
-                        <button className="categories-btn" onClick={toggleMenu}>Categories ☰</button>
-                    </li>
-                </ul>
-                {isMenuOpen && (
-                    <div
-                    className={`category-menu ${isMenuOpen ? 'show' : ''}`}
-                    ref={menuRef}
-                    onMouseEnter={() => setIsMenuOpen(true)}
-                    onMouseLeave={() => setIsMenuOpen(false)}>
-                        <div className="category-content">
-                            {categories.map((category, index) => (
-                                <div key={index} className="category-column">
-                                    <div className="category-header">
-                                        <span className="category-logo">{category.logo}</span>
-                                        {category.header}
-                                    </div>
-                                    {category.subcategories.map((sub, subIndex) => (
-                                        <div key={subIndex} className="category-item">
-                                            {sub}
-                                        </div>
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+            <div className="nav-menu">
+                <div className="nav-left">
+                    <a href="/" className="logo-link">
+                        <Logo className="logo" />
+                    </a>
+                    <button 
+                        ref={buttonRef}
+                        className={`categories-btn ${isMenuOpen ? 'active' : ''}`} 
+                        onClick={toggleMenu}
+                        aria-expanded={isMenuOpen}
+                    >
+                        <span>Categories</span>
+                        <FiChevronDown className={`chevron-icon ${isMenuOpen ? 'rotate' : ''}`} />
+                    </button>
                 </div>
+
+                <div className="nav-center">
+                    <ul className="nav-links">
+                        <li><a className='nav-home' href="/">Home</a></li>
+                        <li><a className='nav-home' href="/deals">Deals</a></li>
+                        <li><a className='nav-home' href="/new">New Arrivals</a></li>
+                    </ul>
+                </div>
+
                 <div className="right-section">
                     <div className="box" ref={searchRef}>
                         <form onSubmit={handleSearchSubmit}>
@@ -138,7 +146,7 @@ const Navbar = () => {
                         </form>
                     </div>
                     <Dropdown className='dropdown' drop='down-centered'>
-                        <Dropdown.Toggle as ="button" className="account-btn" >
+                        <Dropdown.Toggle as="button" className="account-btn">
                             <FaUserCircle size={30} color="#fff" />
                         </Dropdown.Toggle>
                         <Dropdown.Menu className='dropdown-menu'>
@@ -158,6 +166,39 @@ const Navbar = () => {
                             )}
                         </Dropdown.Menu>
                     </Dropdown>
+                </div>
+            </div>
+
+            <div 
+                className={`category-mega-menu ${isMenuOpen ? 'show' : ''}`}
+                ref={menuRef}
+            >
+
+                <div className="category-container">
+                    {categories.map((category, index) => (
+                        <div key={index} className="category-section">
+                            <div className="category-header">
+                                <span className="category-icon">{category.icon}</span>
+                                <h3>{category.header}</h3>
+                            </div>
+                            <div className="subcategories-grid">
+                                {category.subcategories.map((subcat, subIndex) => (
+                                    <div key={subIndex} className="subcategory-column">
+                                        <h4 className="subcategory-title">{subcat.name}</h4>
+                                        <ul className="featured-list">
+                                            {subcat.featured.map((item, itemIndex) => (
+                                                <li key={itemIndex}>
+                                                    <a href={`/category/${encodeURIComponent(category.header)}/${encodeURIComponent(subcat.name)}/${encodeURIComponent(item)}`}>
+                                                        {item}
+                                                    </a>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
         </nav>

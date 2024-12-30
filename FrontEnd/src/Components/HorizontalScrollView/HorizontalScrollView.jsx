@@ -1,92 +1,136 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "./HorizontalScrollView.css";
-import Jarir from "../../assets/Jarir.png"
-import Extra from "../../assets/Extra.png"
-import AMZN from "../../assets/AMZN.png"
-import EmptyPNG from "../../assets/Empty1.png"
-
+import Jarir from "../../assets/Jarir.png";
+import Extra from "../../assets/Extra.png";
+import AMZN from "../../assets/AMZN.png";
 
 const HorizontalScrollView = ({ prompt }) => {
   const [items, setItems] = useState([]);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [totalResults, setTotalResults] = useState(0);
-  
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchItems = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const response = await fetch(
           `http://localhost:8000/search?query=${encodeURIComponent(prompt)}&page=1&page_size=20`
         );
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        
         const data = await response.json();
 
         if (data && data.products) {
-          setItems(data.products);  // Set the products array
-          setTotalResults(data.total_count);  // Use total_count from the response
-      } else {
+          setItems(data.products);
+          setTotalResults(data.total_count);
+        } else {
           setItems([]);
           setTotalResults(0);
+        }
+      } catch (error) {
+        console.error('Error fetching search results:', error);
+        setError(error.message);
+        setItems([]);
+        setTotalResults(0);
+      } finally {
+        setLoading(false);
       }
-  } catch (error) {
-      console.error('Error fetching search results:', error);
-      setResults([]);
-      setTotalResults(0);
-  }
     };
 
-    fetchItems();
+    if (prompt) {
+      fetchItems();
+    }
   }, [prompt]);
 
-  String.prototype.replaceJSX = function (find, replace) {
-    return this.split(find).flatMap((item) => [item, replace]).slice(0, -1);
-  };
-
   const handleShowMore = () => {
-    navigate(`/search?query=${encodeURIComponent(prompt)}&page=1&page_size=50`);
+    navigate(`/search?query=${encodeURIComponent(prompt)}`);
   };
 
   const handleViewProduct = (productId) => {
     navigate(`/product/${productId}`);
   };
-  const AJX = (store_id) => {
-    switch(store_id){
-      case(1):
-      return AMZN
-      case(2):
-      return Jarir
-      case(3):
-      return Extra
-      default:
-      return null}
+
+  const getStoreIcon = (store_id) => {
+    const storeIcons = {
+      1: AMZN,
+      2: Jarir,
+      3: Extra
+    };
+    return storeIcons[store_id] || null;
+  };
+
+  const formatPrice = (price) => {
+    return price !== null 
+      ? `${price.toFixed(2)} SAR`
+      : <span className="available">Price not available</span>;
+  };
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <p className="error-message">Failed to load products. Please try again later.</p>
+      </div>
+    );
   }
 
   return (
     <div className="horizontal-scroll-view">
-      <button className="button5" data-text="Awesome" onClick={handleShowMore}>
-        <span className="actual-text">&nbsp;{prompt.replaceJSX(" ", <b>&nbsp;</b>)}&nbsp;</span>
-        <span aria-hidden="true" className="hover-text5">&nbsp;{prompt.replaceJSX(" ", <b>&nbsp;</b>)}&nbsp;</span>
+      <button className="button5" onClick={handleShowMore}>
+        <span className="actual-text">
+          &nbsp;{prompt.split(' ').map((word, i) => (
+            <React.Fragment key={i}>
+              {i > 0 && <b>&nbsp;</b>}{word}
+            </React.Fragment>
+          ))}&nbsp;
+        </span>
+
       </button>
-      {items.length > 0 ? (
-        <>
-          <div className="scroll-container">
-            {items.map((item, index) => (
-              <div key={index} className="item-card" onClick={() => handleViewProduct(item.product_id)}>
-                <img src={item.image_url} alt={item.title} />
-                <h3>{item.title}</h3>
-                <div className="img-price">
-                  { item.price !== null ?
-                <img className="store-img" src={AJX(item.store_id)}></img>
-                : null}
-                <p className="price">{item.price !== null ? `${item.price.toFixed(2)} SAR` : <p className="available">{item.price == null ? `Price not available` : null} </p>
-              }</p>
-                </div>
-              </div>
-            ))}
+
+      {loading ? (
+        <div className="loading-container">
+          <div className="loading-spinner">
+            <div className="spinner-ring"></div>
+            <p>Loading products...</p>
           </div>
-        </>
+        </div>
+      ) : items.length > 0 ? (
+        <div className="scroll-container">
+          {items.map((item) => (
+            <div 
+              key={item.product_id} 
+              className="item-card" 
+              onClick={() => handleViewProduct(item.product_id)}
+            >
+              <div className="item-image-container">
+                <img src={item.image_url} alt={item.title} loading="lazy" />
+              </div>
+              <h3>{item.title}</h3>
+              <div className="item-footer">
+                <div className="price-container">
+                  {formatPrice(item.price)}
+                </div>
+                {item.store_id && (
+                  <img 
+                    className="store-icon" 
+                    src={getStoreIcon(item.store_id)} 
+                    alt="Store logo" 
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
-        <p className="Loading">{prompt}.</p>
+        <div className="no-results">
+          <p>No products found for "{prompt}"</p>
+        </div>
       )}
     </div>
   );

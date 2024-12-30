@@ -56,8 +56,8 @@ const ProductDetails = () => {
                 <h1>{product.title}</h1>
                 <p>{product.info != null ? product.info : example}</p>
                 </div>
-        <div className='product-price-details'>
-        <p>{product.price !== null ? `${product.price.toFixed(2)} SAR` : <p className="price-not-available">{product.price == null ? `Price not available` : null} </p>
+        <div  className={product.availability !== false ? 'product-price-details' : `product-not-available1`}>
+        <p>{product.price !== null && product.availability ? `${product.price.toFixed(2)} SAR` : "Product not available" 
               }</p>
 
             <button 

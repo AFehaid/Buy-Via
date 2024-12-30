@@ -1,133 +1,217 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
 *{
-  margin: 0;
+    margin: 0;
+    padding: 0;
   font-family: 'Poppins', sans-serif;
   
 }
 
-/* Navbar container adjustments */
 .nav-menu {
     display: flex;
     align-items: center;
     justify-content: space-between;
     background: #007bff;
     padding: 10px 3%;
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 64px;
+    box-sizing: border-box;
 }
-/* Wrapper for search and account button */
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    width: 33%; 
+}
+
+.nav-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 34%; 
+}
 .right-section {
     display: flex;
     align-items: center;
-    margin-left: auto; /* Push the section to the far right */
-    gap: 15px; /* Space between search bar and account button */
+    justify-content: flex-end;
+    gap: 15px;
+    width: 33%; 
 }
-
-/* Wrapper for nav links */
 .wrapper {
     display: flex;
-    justify-content: center; /* Centers the nav links */
+    justify-content: center; 
     align-items: center;
-    flex: 1; /* Take available space between the logo and the right section */
+    flex: 1; 
 }
 
-/* Navbar links styling */
 .nav-links {
     display: flex;
     justify-content: center;
     align-items: center;
-    list-style: none;
+    gap: 40px; 
     margin: 0;
     padding: 0;
-    margin-left: 264px;
-    position: relative; /* Prevent layout changes */
+    list-style: none;
 }
 
-/* Navbar links styling */
 .nav-links li {
     list-style: none;
     position: relative;
-    margin: 0 20px;
+    margin: 0;
 }
 
 
 .nav-links .nav-home {
-    color: #f2f2f2;
+    color: #fff;
     text-decoration: none;
-    font-size: 18px;
-    font-weight: 420;
-    padding: 9px 15px;
-    border-radius: 10px;
+    font-size: 20px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 8px;
     transition: all 0.3s ease;
 }
 
 .nav-links .nav-home:hover {
-    color: #007bff;
-    background-color: #fff;
-    transition: 0.5s;
+    background-color: rgba(255, 255, 255, 0.1);
+
 }
 
 .categories-btn {
-    color: #f2f2f2;
-    text-decoration: none;
-    font-size: 18px;
-    font-weight: 420;
-    padding: 9px 15px;
-    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
     transition: all 0.3s ease;
 }
-.nav-links .categories-btn:hover {
-    color: #f2f2f2;
-    text-decoration: none;
-    font-size: 18px;
-    font-weight: 420;
-    padding: 9px 15px;
-    border-radius: 10px;
-    transition: all 0.3s ease;
+.categories-btn.active {
+    background-color: #fff;
+    color: #007bff;
 }
-.category-menu {
-    display: block !important; /* Ensure it is visible during debugging */
-    position: absolute;
-    top: 70px;
+
+.categories-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+.categories-btn.active:hover {
+    background-color: #f8f9fa;
+}
+
+.chevron-icon {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s ease;
+}
+
+.chevron-icon.rotate {
+    transform: rotate(180deg);
+}
+.category-mega-menu {
+    position: fixed;
+    top: 64px; /* Matches navbar height */
     left: 0;
     width: 100%;
-    background-color: #fff;
-    color: #333;
-    padding: 20px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
+    background-color: #ffffff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 0 0 12px 12px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 999;
+    overflow: hidden;
+    height: 0;
 }
 
-.category-content {
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
+.category-mega-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    height: auto;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
 }
 
-.category-column {
-    margin: 10px;
-    flex: 1;
-    min-width: 200px;
+
+.category-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 32px;
+}
+
+.category-section {
+    padding: 16px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    transition: all 0.3s ease;
 }
 
 .category-header {
-    font-weight: bold;
-    margin-bottom: 10px;
     display: flex;
     align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e0e0e0;
 }
 
-.category-logo {
-    margin-right: 10px;
-    font-size: 20px;
+.category-icon {
+    font-size: 24px;
 }
 
-.category-item {
-    padding: 5px 0;
-    cursor: pointer;
+.subcategories-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
 }
 
-.category-item:hover {
-    background-color: #f0f0f0;
+.subcategory-title {
+    color: #007bff;
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.featured-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.featured-list li {
+    margin: 4px 0;
+}
+
+.featured-list a {
+    color: #666;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: block;
+    padding: 4px 0;
+}
+
+.featured-list a:hover {
+    color: #007bff;
+    transform: translateX(4px);
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
 }
 
 .navbar.navbar-fixed-top {
@@ -136,7 +220,7 @@
     right: 0;
     left: 0;
   }
-/* Account button styling */
+
 .account-btn {
     background: none;
     border: none;
@@ -154,25 +238,21 @@
 }
 
 .account-btn::after {
-    display: none; /* Hides the arrow */
+    display: none; 
 }
 
-/* Right section (search and account button) */
 .right-section {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 15px;
-    flex-shrink: 0; /* Prevent shrinking */
-    min-width: 400px; /* Reserve space for expanding search bar */
+    flex-shrink: 0; 
+    min-width: 400px; 
 }
 
-/* Search bar styling */
+
 .box {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end; /* Align to the right */
 }
 
 .nav-menu .logo{
@@ -181,31 +261,30 @@
 
 
 
-  .input {
-    padding: 13px;
-    padding-left: 40px; /* Space for the icon */
-    width: 50px; /* Small when closed */
+.input {
+    padding: 10px;
+    padding-left: 40px;
+    width: 40px;
     height: 40px;
     background: none;
     border: 2px solid white;
     border-radius: 50px;
     box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
     font-size: 16px;
-    color: rgb(255, 255, 255);
+    color: white;
     outline: none;
-    transition: width 0.3s, border-radius 0.3s, background 0.3s;
-    background-image: url('../../assets/search_icon.png'); /* Add search icon */
-    background-size: 25px 25px; /* Adjust icon size */
-    background-position: center; /* Position icon inside the input */
+    transition: all 0.3s ease;
+    background-image: url('../../assets/search_icon.png');
+    background-size: 20px 20px;
+    background-position: center;
     background-repeat: no-repeat;
 }
 
 .input.open {
-    width: 300px; /* Expanded when open */
+    width: 250px;
     background: #007bff;
-    border-radius: 40px;
-    background-image: none; /* Remove icon when open */
+    padding-left: 20px;
+    background-image: none;
 }
 
 .input::placeholder {
@@ -213,10 +292,10 @@
 }
 
 .box:hover input {
-    width: 300px;
+    width: 250px;
     background: #007bff;
-    border-radius: 40px;
-    transition: 0.4s;
+    padding-left: 20px;
+    background-image: none;
 }
 
 
@@ -249,11 +328,79 @@
     
 }
 
+main {
+    padding-top: 64px; 
+}
 
+@media (max-width: 1200px) {
+    .right-section {
+        min-width: auto;
+    }
 
+    .input.open, .box:hover input {
+        width: 200px;
+    }
+}
 
+@media (max-width: 992px) {
+    .nav-center {
+        display: none;
+    }
+    .nav-left {
+        width: auto;
+    }
+    .right-section {
+        margin-left: auto;
+    }
+    .input.open, .box:hover input {
+        width: 180px;
+    }
+    .categories-btn {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}
 
+@media (max-width: 768px) {
+    .nav-menu {
+        padding: 10px 15px;
+    }
+    
+    .nav-left {
+        gap: 10px;
+    }
+    .right-section {
+        gap: 10px;
+    }
+    .categories-btn span {
+        display: none;
+    }
+    
+    .categories-btn {
+        padding: 8px;
+    }
+    .input {
+        width: 35px;
+        height: 35px;
+    }
+    .input.open, .box:hover input {
+        width: 150px;
+    }
+    .chevron-icon {
+        width: 16px;
+        height: 16px;
+    }
+}
 
+@media (max-width: 480px) {
+    .input.open, .box:hover input {
+        width: 120px;
+    }
+
+    .nav-menu {
+        padding: 10px;
+    }
+}
 
 
 
