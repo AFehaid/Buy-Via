@@ -2,7 +2,6 @@ import "../style.css"
 import Img_Slider from "../Components/Img_Slider/Img_Slider"
 import SimpleImageSlider from "react-simple-image-slider";
 import SearchResults from "./SearchResults";
-import Search from "./search";
 import HorizontalScrollView from "../Components/HorizontalScrollView/HorizontalScrollView";
 
 

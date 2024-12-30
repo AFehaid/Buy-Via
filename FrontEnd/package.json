@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "axios": "^1.7.8",
+    "card": "^2.5.4",
     "qs": "^6.13.1",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.6",
@@ -19,7 +20,10 @@
     "react-router-dom": "^7.0.2",
     "react-simple-image-slider": "^2.4.1",
     "react-slideshow-image": "^4.3.2",
-    "react-string-replace": "^1.1.1"
+    "react-string-replace": "^1.1.1",
+    "select": "^1.1.2",
+    "separator": "^0.1.0",
+    "slider": "^1.0.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
@@ -31,6 +35,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.12.0",
+    "tailwindcss": "^3.4.17",
     "vite": "^6.0.1"
   }
 }
