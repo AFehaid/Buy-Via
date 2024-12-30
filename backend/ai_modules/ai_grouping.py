@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import DBSCAN
 import numpy as np
-
 # Import your base AIService interface (if you want to keep consistent with the structure)
 from .ai_service import AIService
 
