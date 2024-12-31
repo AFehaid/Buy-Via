@@ -94,8 +94,8 @@ const HorizontalScrollView = ({ prompt }) => {
       </button>
 
       {loading ? (
-        <div className="loading-container">
-          <div className="loading-spinner">
+        <div className="loading-container1">
+          <div className="loading-spinner1">
             <div className="spinner-ring"></div>
             <p>Loading products...</p>
           </div>

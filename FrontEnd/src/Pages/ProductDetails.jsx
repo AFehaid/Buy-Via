@@ -1,85 +1,108 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import "./ProductDetails.css"
-import Jarir from '../assets/Jarir.png'
-import AMZN from '../assets/AMZN1.png'
-import Extra from '../assets/Extra1.png'
+import { Loader2 } from 'lucide-react';
+import Jarir from '../assets/Jarir.png';
+import AMZN from '../assets/AMZN1.png';
+import Extra from '../assets/Extra1.png';
+import './ProductDetails.css';
+
 const ProductDetails = () => {
-    const { productId } = useParams(); // Get the product ID from the URL
+    const { productId } = useParams();
     const [product, setProduct] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-      const AJX = (store_id) => {
-        switch(store_id){
-          case(1):
-          return AMZN
-          case(2):
-          return Jarir
-          case(3):
-          return Extra
-          default:
-          return null}
-      }
+    const getStoreLogo = (storeId) => {
+        switch(storeId) {
+            case 1: return AMZN;
+            case 2: return Jarir;
+            case 3: return Extra;
+            default: return null;
+        }
+    };
 
     useEffect(() => {
         const fetchProduct = async () => {
             try {
-                const response = await axios.get(`http://localhost:8000/search/products/?product_id=${productId}`);
-                setProduct(response.data);
+                setLoading(true);
+                const response = await fetch(`http://localhost:8000/search/products/?product_id=${productId}`);
+                if (!response.ok) throw new Error('Failed to fetch product');
+                const data = await response.json();
+                setProduct(data);
             } catch (err) {
-                console.error("Error fetching product:", err);
-                setError("Failed to load product details. Please try again.");
+                setError("Unable to load product details. Please try again later.");
+                console.error("Error:", err);
+            } finally {
+                setLoading(false);
             }
         };
 
         fetchProduct();
     }, [productId]);
 
-    if (error) return <p>{error}</p>;
+    if (loading) {
+        return (
+            <div className="loading-container">
+                <Loader2 className="loading-spinner" />
+            </div>
+        );
+    }
 
-    if (!product) return <p>Loading...</p>;
-    const example = "This product offers a great combination of quality and value, designed to meet your needs. Suitable for various applications, it ensures durability and performance. For more details, please refer to the specifications or contact the seller."
+    if (error) {
+        return <div className="error-message">{error}</div>;
+    }
+
+    if (!product) return null;
+
+    const defaultDescription = "This product offers a great combination of quality and value, designed to meet your needs. Suitable for various applications, it ensures durability and performance. For more details, please refer to the specifications or contact the seller.";
+
     return (
-
-        <div className='container'>
+        <div className="container">
             <div className="left-column">
-            <img  src={product.image_url} alt=""/>
-
-            </div>
- 
- 
-            <div className="right-column">
- 
-                <div className="product-description">
-                <span>Category</span>
-                <h1>{product.title}</h1>
-                <p>{product.info != null ? product.info : example}</p>
+                <div className="product-image-container">
+                    <img 
+                        src={product.image_url} 
+                        alt={product.title}
+                        className="product-image"
+                    />
                 </div>
-        <div  className={product.availability !== false ? 'product-price-details' : `product-not-available1`}>
-        <p>{product.price !== null && product.availability ? `${product.price.toFixed(2)} SAR` : "Product not available" 
-              }</p>
-
-            <button 
-                className='buy-button' 
-                onClick={() => window.open(product.link, "_blank")}>
-                <svg
-                    width="36px"
-                    height="36px"
-                >
-                <rect width="36" height="36" x="0" y="0" fillOpacity={0}></rect>
-                <image 
-                    width="36px"
-                    height="36px"
-                    href={AJX(product.store_id)}
-                />
-                </svg>
-                <span class="via">Via</span>
-                <span class="buy">Buy</span>
-            </button>
-        </div>
             </div>
-    </div>
+
+            <div className="right-column">
+                <div className="product-description">
+                    <span>{product.category || 'Category'}</span>
+                    <h1>{product.title}</h1>
+                    <p>{product.info || defaultDescription}</p>
+                </div>
+
+                <div className={product.availability !== false ? 'product-price-details' : 'product-not-available1'}>
+                    <p>
+                        {product.price !== null && product.availability 
+                            ? `${product.price.toFixed(2)} SAR` 
+                            : "Product not available"
+                        }
+                    </p>
+
+                    {product.availability && (
+                        <button 
+                            className="buy-button"
+                            onClick={() => window.open(product.link, "_blank")}
+                        >
+                            <svg width="36px" height="36px">
+                                <rect width="36" height="36" x="0" y="0" fillOpacity={0}></rect>
+                                <image 
+                                    width="36px"
+                                    height="36px"
+                                    href={getStoreLogo(product.store_id)}
+                                />
+                            </svg>
+                            <span className="via">Via</span>
+                            <span className="buy">Buy</span>
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 };
 

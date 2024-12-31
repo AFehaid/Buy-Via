@@ -6,6 +6,7 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import {useAuth}  from './AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import { FiChevronDown } from 'react-icons/fi';
+import Login from '../../Pages/login';
 
 const Navbar = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -16,6 +17,7 @@ const Navbar = () => {
     const menuRef = useRef(null);
     const buttonRef = useRef(null);
     const navigate = useNavigate();
+    const [showLoginModal, setShowLoginModal] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -160,12 +162,13 @@ const Navbar = () => {
                                 </>
                             ) : (
                                 <>
-                                    <Dropdown.Item className='dropdown-items' href="/login">Login</Dropdown.Item>
+                                    <Dropdown.Item className='dropdown-items' onClick={() => setShowLoginModal(true)}>Login</Dropdown.Item>
                                     <Dropdown.Item className='dropdown-items' href="/Sign_Up">Sign Up</Dropdown.Item>
                                 </>
                             )}
                         </Dropdown.Menu>
                     </Dropdown>
+                    {showLoginModal && <Login onClose={() => setShowLoginModal(false)} />}
                 </div>
             </div>
 

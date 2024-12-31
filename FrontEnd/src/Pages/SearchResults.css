@@ -69,6 +69,9 @@
     margin-left: 280px; 
     padding: 24px;
     min-height: calc(100vh - 64px);
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center children horizontally */
 }
 
 .main-content h1 {
@@ -88,9 +91,8 @@
     gap: 24px;
     margin-bottom: 24px;
     max-width: 1400px; 
-    margin: 0 auto; 
+    width: 100%; /* Ensure it takes full width */
 }
-
 .product-card {
     background-color: white;
     border-radius: 8px;
@@ -182,8 +184,10 @@
 
 
 .loading-spinner {
-    text-align: center;
-    padding: 24px;
+    display: flex;
+    justify-content: center; /* Center spinner horizontally */
+    align-items: center; /* Center spinner vertically */
+    width: 100%; /* Ensure it takes full width */
 }
 
 .spinner {

@@ -12,6 +12,7 @@
   "dependencies": {
     "axios": "^1.7.8",
     "card": "^2.5.4",
+    "lucide-react": "^0.469.0",
     "qs": "^6.13.1",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.6",

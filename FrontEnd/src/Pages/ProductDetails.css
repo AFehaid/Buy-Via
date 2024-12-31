@@ -3,62 +3,100 @@
     margin: 0 auto;
     padding: 15px;
     display: flex;
-  }
+    flex-wrap: wrap;
+    gap: 30px;
+}
 
+/* Columns */
 .left-column {
+    flex: 1;
+    min-width: 300px;
     margin-top: 60px;
-    width: 55%;
-    position: relative;
-  }
-   
-  .right-column {
-    width: 45%;
-    margin-top: 60px;
-  }
+}
 
-  .product-description span {
+.right-column {
+    flex: 1;
+    min-width: 300px;
+    margin-top: 60px;
+}
+
+/* Product Image */
+.product-image-container {
+    width: 100%;
+    position: relative;
+    padding-top: 100%; /* 1:1 Aspect Ratio */
+    background-color: #f7f7f7;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.product-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 70%;
+    height: 60%;
+    object-fit: contain;
+}
+
+/* Product Description */
+.product-description {
+    margin-bottom: 30px;
+}
+
+.product-description span {
     font-size: 15px;
     color: #358ED7;
     letter-spacing: 1px;
     text-transform: uppercase;
     text-decoration: none;
-  }
+}
 
-  .product-description p {
+.product-description h1 {
+    font-weight: 700;
+    font-size: 32px;
+    color: #43474D;
+    margin-top: 10px;
+}
+
+.product-description p {
     font-size: 16px;
     font-weight: 300;
     color: #86939E;
     line-height: 24px;
-  }
+    margin-top: 20px;
+}
 
+/* Product Price */
 .product-price-details {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
 }
-.product-not-available1{
-  display: flex;
-  align-items: center;
-}
-.product-not-available1 p{
-  font-size: 26px;
-  font-weight: 300;
-  color: red;
-  margin-right: 20px;
-  padding-top: 14px;
 
+.product-not-available1 {
+    display: flex;
+    align-items: center;
 }
+
+.product-price-details p,
+.product-not-available1 p {
+    font-size: 26px;
+    font-weight: 300;
+    margin: 0;
+    padding-top: 14px;
+}
+
 .product-price-details p {
-  font-size: 26px;
-  font-weight: 300;
-  color: #43474D;
-  margin-right: 20px;
-  padding-top: 14px;
+    color: #43474D;
+}
 
+.product-not-available1 p {
+    color: red;
 }
-.product-price-details .price-not-available{
-  font-size: 21px;
-  color: red;
-}
+
+/* Buy Button */
 .buy-button {
     display: flex;
     align-items: center;
@@ -78,46 +116,101 @@
     position: relative;
     overflow: hidden;
     transition: all 0.5s ease;
-  }
-  
-  .buy-button:active {
+}
+
+.buy-button:active {
     transform: scale(0.9);
     transition: all 100ms ease;
-  }
-  
-  .buy-button svg {
+}
+
+.buy-button svg {
     transition: all 0.5s ease;
     z-index: 2;
-  }
-  
-  .buy {
+}
+
+.buy {
     transition: all 0.5s ease;
     transition-delay: 300ms;
-  }
-  
-  .buy-button:hover svg {
+}
+
+.buy-button:hover svg {
     transform: scale(1) translate(100%);
-  }
-  
-  .via {
+}
+
+.via {
     position: absolute;
     left: 0;
     transform: translateX(-100%);
     transition: all 0.5s ease;
     z-index: 2;
-  }
-  
-  .buy-button:hover .via {
+}
+
+.buy-button:hover .via {
     transform: translateX(30px);
     transition-delay: 300ms;
-  }
-  
-  .buy-button:hover .buy {
+}
+
+.buy-button:hover .buy {
     transform: translateX(200%);
     color: #358ED7;
     opacity: 0;
     transition-delay: 100ms;
-  }
-  
+}
 
+/* Loading State */
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+}
 
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    color: #007bff;
+    animation: spin 1s linear infinite;
+}
+
+/* Error State */
+.error-message {
+    text-align: center;
+    color: #dc2626;
+    padding: 20px;
+    margin: 20px;
+    background-color: #fef2f2;
+    border: 1px solid #fee2e2;
+    border-radius: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .left-column,
+    .right-column {
+        width: 100%;
+        margin-top: 30px;
+    }
+
+    .product-price-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .buy-button {
+        width: 100%;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
