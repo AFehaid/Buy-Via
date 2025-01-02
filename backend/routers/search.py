@@ -31,23 +31,37 @@ def get_search_query(db: Session, query: str, sort_by: str):
     """Build base search query with filters and sorting"""
     words = query.split()
     
-    adjacent_condition = or_(
-        Product.title.ilike(f"%{query}%"),
-        Product.info.ilike(f"%{query}%")
-    )
+    # Create conditions with weights for relevancy
+    conditions = []
     
-    non_adjacent_conditions = [
-        or_(
-            Product.title.ilike(f"%{word}%"),
-            Product.info.ilike(f"%{word}%")
-        )
-        for word in words
-    ]
+    # Exact match in title (highest priority)
+    conditions.append((Product.title.ilike(f"%{query}%"), 3.0))
+    
+    # Partial matches in title (medium priority)
+    for word in words:
+        conditions.append((Product.title.ilike(f"%{word}%"), 2.0))
+    
+    # Matches in info (lower priority)
+    conditions.append((Product.info.ilike(f"%{query}%"), 1.0))
+    for word in words:
+        conditions.append((Product.info.ilike(f"%{word}%"), 0.5))
 
-    combined_query = db.query(Product).filter(or_(adjacent_condition, *non_adjacent_conditions))
+    # Build the relevance score expression
+    from sqlalchemy import case, cast, Float
+    relevance_score = sum(
+        case((condition, weight), else_=0.0)
+        for condition, weight in conditions
+    ).label('relevance')
+
+    # Base query with relevance score
+    combined_query = db.query(Product, relevance_score).filter(
+        or_(*[condition for condition, _ in conditions])
+    )
 
     # Apply sorting
-    if sort_by == "price-low":
+    if sort_by == "relevance":
+        combined_query = combined_query.order_by(desc('relevance'))
+    elif sort_by == "price-low":
         combined_query = combined_query.order_by(
             case((Product.price.is_(None), 1), else_=0),
             asc(Product.price)
@@ -60,7 +74,8 @@ def get_search_query(db: Session, query: str, sort_by: str):
     elif sort_by == "newest":
         combined_query = combined_query.order_by(desc(Product.date))
 
-    return combined_query
+    # Return only products that have some relevance
+    return combined_query.filter(relevance_score > 0)
 
 def get_price_history(db: Session, product_ids: List[int]) -> Dict[int, float]:
     """Get last price history for products"""
@@ -106,23 +121,23 @@ def search_products(
     db: Session = Depends(get_db)
 ):
     """Search products with pagination and sorting"""
-    # Calculate offset
     offset = (page - 1) * page_size
-
-    # Get base query
     combined_query = get_search_query(db, query, sort_by)
     
     # Get total count
     total = combined_query.count()
 
-    # Apply pagination
+    # Apply pagination and get results
     paginated_results = combined_query.offset(offset).limit(page_size).all()
 
     if not paginated_results:
         raise HTTPException(status_code=404, detail="No products found matching the query")
 
+    # Extract products from results (excluding relevance scores)
+    products_only = [result[0] for result in paginated_results]
+
     # Get price history
-    product_ids = [p.product_id for p in paginated_results]
+    product_ids = [p.product_id for p in products_only]
     last_old_prices = get_price_history(db, product_ids)
 
     # Format response
@@ -131,7 +146,7 @@ def search_products(
             product, 
             last_old_prices.get(product.product_id)
         ) 
-        for product in paginated_results
+        for product in products_only
     ]
 
     return SearchResponse(total=total, products=products)
