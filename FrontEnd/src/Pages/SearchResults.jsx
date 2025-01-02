@@ -69,7 +69,7 @@ const SearchResults = () => {
                             return unique;
                         }
                     });
-                    setTotalResults(data.total_count);
+                    setTotalResults(data.total);
                     setHasMore(data.products.length === pageSize);
                 }
             } catch (error) {
