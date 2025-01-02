@@ -1,7 +1,6 @@
 .search-container {
     padding-top: 84px; 
     min-height: calc(100vh - 64px); 
-    background-color: #f9f9f9;
 }
 
 
@@ -94,12 +93,18 @@
     width: 100%; /* Ensure it takes full width */
 }
 .product-card {
+    width: 250px; /* Fixed width */
+    height: 400px; /* Fixed height */
     background-color: white;
     border-radius: 8px;
     padding: 16px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s, box-shadow 0.2s;
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Ensure content is spaced properly */
+    overflow: hidden; /* Prevent content from overflowing */
 }
 
 .product-card:hover {
@@ -107,22 +112,26 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.product-image {
-    width: 100%;
-    height: 200px;
-    object-fit:scale-down;
-    border-radius: 4px;
-    margin-bottom: 12px;
-}
+
 
 
 .product-image-container {
     width: 100%;
-    height: 200px;
+    height: 200px; /* Fixed height for image container */
     margin-bottom: 12px;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    overflow: hidden; /* Ensure images don't overflow */
+    background-color: #f9f9f9; /* Optional: Add a background color */
+    border-radius: 4px; /* Optional: Match the card's border radius */
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Ensure images fit within the container */
+    border-radius: 4px;
 }
 
 .price-availability {

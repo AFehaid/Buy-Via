@@ -42,26 +42,32 @@ const SearchResults = () => {
     };
 
     useEffect(() => {
+        console.log('Resetting state for new sortBy:', sortBy); // Debugging
         setResults([]);
         setPage(1);
         setHasMore(true);
-    }, [location.search]);
+    }, [location.search, sortBy]);
     
     useEffect(() => {
         const fetchResults = async () => {
+            console.log('Fetching results...', { query, page, sortBy }); // Debugging
             try {
                 setLoading(true);
                 const response = await fetch(
-                    `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}`
+                    `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}`
                 );
                 const data = await response.json();
-
+    
                 if (data && data.products) {
                     setResults(prev => {
-                        const newResults = [...prev, ...data.products];
-                        const unique = Array.from(new Map(newResults.map(item => 
-                            [item.product_id, item])).values());
-                        return unique;
+                        if (page === 1) {
+                            return data.products;
+                        } else {
+                            const newResults = [...prev, ...data.products];
+                            const unique = Array.from(new Map(newResults.map(item => 
+                                [item.product_id, item])).values());
+                            return unique;
+                        }
                     });
                     setTotalResults(data.total_count);
                     setHasMore(data.products.length === pageSize);
@@ -72,31 +78,32 @@ const SearchResults = () => {
                 setLoading(false);
             }
         };
-
+    
         fetchResults();
-    }, [query, page]);
+    }, [query, page, sortBy]);
 
     useEffect(() => {
         if (!hasMore || loading) return;
-
+    
         const options = {
             root: null,
             rootMargin: '20px',
             threshold: 0.1
         };
-
+    
         const handleObserver = (entries) => {
             const [target] = entries;
+            console.log('Observer triggered:', target.isIntersecting); // Debugging
             if (target.isIntersecting && hasMore) {
                 setPage(prev => prev + 1);
             }
         };
-
+    
         const currentObserver = new IntersectionObserver(handleObserver, options);
         if (lastProductRef.current) {
             currentObserver.observe(lastProductRef.current);
         }
-
+    
         return () => {
             if (lastProductRef.current) {
                 currentObserver.unobserve(lastProductRef.current);
@@ -105,6 +112,7 @@ const SearchResults = () => {
     }, [hasMore, loading]);
 
     const handleSortChange = (e) => {
+        console.log('Sort By Changed:', e.target.value); // Debugging
         setSortBy(e.target.value);
     };
 
