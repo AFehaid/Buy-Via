@@ -25,13 +25,13 @@ const ProductDetails = () => {
         const fetchProduct = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`http://localhost:8000/search/products/?product_id=${productId}`);
+                // Update the endpoint URL to match the backend route
+                const response = await fetch(`http://localhost:8000/search/${productId}`);
                 if (!response.ok) throw new Error('Failed to fetch product');
                 const data = await response.json();
                 setProduct(data);
             } catch (err) {
-                setError("Unable to load product details. Please try again later.");
-                console.error("Error:", err);
+                setError(err.message);
             } finally {
                 setLoading(false);
             }
