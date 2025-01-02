@@ -59,11 +59,11 @@ const ProductDetails = () => {
     return (
         <div className="container">
             <div className="left-column">
-                <div className="product-image-container">
+                <div className="product-image-container-details">
                     <img 
                         src={product.image_url} 
                         alt={product.title}
-                        className="product-image"
+                        className="product-image-details"
                     />
                 </div>
             </div>
