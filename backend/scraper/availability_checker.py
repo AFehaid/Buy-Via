@@ -1,5 +1,4 @@
-# backend\scraper\availability_manager.py
-from concurrent.futures import ThreadPoolExecutor
+# backend/scraper/availability_checker.py
 from sqlalchemy.orm import Session
 from scraper.scraper import AmazonScraper, JarirScraper, ExtraScraper
 from models import Product, Store, engine
@@ -28,7 +27,7 @@ class AvailabilityChecker:
         scraper = scraper_class(store_name)
         scraper.driver = scraper.setup_driver()  # Ensure a driver is set up
 
-        # Create a new session for this thread
+        # Create a new session for database updates
         with Session(engine) as db:
             try:
                 for product in products:
@@ -38,31 +37,32 @@ class AvailabilityChecker:
                         print(f"[{store_name}] Product ID: {product.product_id}, Title: {product.title}, Available: {availability}")
                         product.availability = availability
                         db.add(product)  # Stage the update
-                        db.commit()  # Commit immediately
+                        db.commit()       # Commit immediately
                     except Exception as e:
                         print(f"[{store_name}] Error checking Product ID: {product.product_id}, Title: {product.title}. Error: {e}")
             finally:
-                scraper.quit_driver()  # Ensure the driver is quit after processing
+                # Ensure the WebDriver is properly closed after processing
+                scraper.quit_driver()
 
     def update_availability(self):
         """
-        Update the availability of all products in the database.
+        Update the availability of all products in the database,
+        starting from the largest store_id to the smallest (sequentially).
         """
-        # Fetch all stores from the database
+        # Fetch all stores from the database, ordering by store_id descending
         with Session(engine) as db:
-            stores = db.query(Store).all()
+            stores = db.query(Store).order_by(Store.store_id.desc()).all()
 
-        # Use a ThreadPoolExecutor to process stores in parallel
-        with ThreadPoolExecutor(max_workers=len(self.scrapers)) as executor:
-            for store in stores:
-                # Fetch all products for the current store
-                with Session(engine) as db:
-                    store_products = db.query(Product).filter(Product.store_id == store.store_id).all()
-                    if not store_products:
-                        continue  # Skip if no products for this store
+        # Process stores sequentially (not in parallel)
+        for store in stores:
+            # Fetch all products for the current store
+            with Session(engine) as db:
+                store_products = db.query(Product).filter(Product.store_id == store.store_id).all()
+                if not store_products:
+                    continue
 
-                # Submit a task for this store
-                executor.submit(self.check_store_availability, store.store_name, store_products)
+            # Run availability check
+            self.check_store_availability(store.store_name, store_products)
 
 if __name__ == "__main__":
     checker = AvailabilityChecker()
