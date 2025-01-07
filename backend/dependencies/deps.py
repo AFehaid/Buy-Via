@@ -1,7 +1,7 @@
 # Buy-Via\backend\dependencies\deps.py
 from typing import Annotated
 from sqlalchemy.orm import Session
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Security
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jose import jwt, JWTError
@@ -26,6 +26,24 @@ def get_db():
         db.close()
 
 db_dependency = Annotated[Session, Depends(get_db)]
+
+oauth2_bearer_optional = OAuth2PasswordBearer(tokenUrl="auth/token", auto_error=False)
+
+async def get_optional_current_user(token: str = Depends(oauth2_bearer_optional)):
+    """
+    Retrieve the current user if authenticated; otherwise, return None.
+    """
+    if token:
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            username: str = payload.get("sub")
+            user_id: int = payload.get("id")
+            if username is None or user_id is None:
+                return None
+            return {"username": username, "id": user_id}
+        except JWTError:
+            return None
+    return None
 
 # Authentication Dependency
 async def get_current_user(token: str = Depends(oauth2_bearer)):

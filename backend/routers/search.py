@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, asc, desc, case
 from pydantic import BaseModel
 
-from models import Product, ProductPriceHistory
-from dependencies.deps import get_db
+from models import Product, ProductPriceHistory, SearchHistory
+from dependencies.deps import get_db, get_current_user, get_optional_current_user
+from fastapi.security import OAuth2PasswordBearer
 
 # ----------------------------------------
 # 1) Define your accessories search dict
@@ -242,24 +243,26 @@ router = APIRouter(prefix="/search", tags=["search"])
 # ----------------------------------------
 # GET /search
 # ----------------------------------------
+
 @router.get("/", response_model=SearchResponse)
 def search_products(
     query: str = Query(..., min_length=1, description="Search query"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(10, ge=1, le=100, description="Items per page"),
     sort_by: Optional[str] = Query("relevance", description="Sort by: relevance, price-low, price-high, newest"),
-    # -- NEW Filters --
     min_price: Optional[float] = Query(None, description="Minimum price filter"),
     max_price: Optional[float] = Query(None, description="Maximum price filter"),
     store_filter: Optional[int] = Query(None, description="Filter by store ID"),
-    in_stock_only: bool = Query(False, description="Filter by availability: only show in-stock products"),
-    db: Session = Depends(get_db)
+    in_stock_only: bool = Query(False, description="Filter by availability"),
+    db: Session = Depends(get_db),
+    current_user: Optional[dict] = Depends(get_optional_current_user),  # Optional dependency
 ):
-    """Search products with pagination, sorting, round-robin store distribution, and additional filters."""
-    # 1) Build base query (with relevance, accessory logic, sorting)
+    """
+    Search products and log user searches (if authenticated).
+    """
     combined_query = get_search_query(db, query, sort_by)
 
-    # 2) Apply filters (if provided)
+    # Apply filters
     if store_filter is not None:
         combined_query = combined_query.filter(Product.store_id == store_filter)
     if min_price is not None:
@@ -269,27 +272,32 @@ def search_products(
     if in_stock_only:
         combined_query = combined_query.filter(Product.availability == True)
 
-    # 3) Count total
+    # Count and paginate
     total = combined_query.count()
-
-    # 4) Pagination
     offset = (page - 1) * page_size
     paginated_results = combined_query.offset(offset).limit(page_size).all()
     if not paginated_results:
         raise HTTPException(status_code=404, detail="No products found matching the query")
 
-    # 5) Extract Product objects (ignore relevance, is_accessory, etc.)
     products_only = [result[0] for result in paginated_results]
 
-    # 6) Round-robin reorder by store
-    #    (If you want to do it before pagination, you'd fetch all results, reorder, then slice.)
+    # Reorder by store (if needed)
     reordered = reorder_by_store_round_robin(products_only)
 
-    # 7) Price history
+    # Get price history
     product_ids = [p.product_id for p in reordered]
     last_old_prices = get_price_history(db, product_ids)
 
-    # 8) Build final response
+    # Log the user's search only if authenticated
+    if current_user:
+        search_history_entry = SearchHistory(
+            user_id=current_user["id"],
+            search_value=query,
+        )
+        db.add(search_history_entry)
+        db.commit()
+
+    # Format response
     products = [
         format_product_response(product, last_old_prices.get(product.product_id))
         for product in reordered
@@ -304,9 +312,12 @@ def search_products(
 @router.get("/{product_id}", response_model=ProductResponse)
 def get_product(
     product_id: int = Path(..., description="The ID of the product to retrieve"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Optional[dict] = Depends(get_optional_current_user),  # Optional dependency
 ):
-    """Get a single product by ID with its last price history."""
+    """
+    Get a single product by ID and log the view (if authenticated).
+    """
     product = db.query(Product).filter(Product.product_id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -314,4 +325,16 @@ def get_product(
     last_old_prices = get_price_history(db, [product_id])
     last_old_price = last_old_prices.get(product_id)
 
+    # Log product view for signed-in user
+    if current_user:
+        view_history_entry = SearchHistory(
+            user_id=current_user["id"],
+            search_value=f"Viewed product {product_id}",
+            product_id=product_id,
+        )
+        db.add(view_history_entry)
+        db.commit()
+
     return format_product_response(product, last_old_price)
+
+
