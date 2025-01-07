@@ -1,4 +1,4 @@
-import "../../style.css"
+import "./Img_Slider.css"
 import SimpleImageSlider from "react-simple-image-slider";
 
 import a6 from "../../assets/a6.jpg"

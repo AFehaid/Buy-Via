@@ -5,6 +5,35 @@ import Jarir from "../../assets/Jarir.png";
 import Extra from "../../assets/Extra.png";
 import AMZN from "../../assets/AMZN.png";
 
+const requestQueue = [];
+let isProcessing = false;
+
+const processQueue = async () => {
+  if (isProcessing || requestQueue.length === 0) return;
+  
+  isProcessing = true;
+  const nextRequest = requestQueue[0];
+  
+  try {
+    const response = await fetch(nextRequest.url);
+    const data = await response.json();
+    nextRequest.resolve(data);
+  } catch (error) {
+    nextRequest.reject(error);
+  } finally {
+    requestQueue.shift();
+    isProcessing = false;
+    processQueue();
+  }
+};
+
+const queueRequest = (url) => {
+  return new Promise((resolve, reject) => {
+    requestQueue.push({ url, resolve, reject });
+    processQueue();
+  });
+};
+
 const HorizontalScrollView = ({ prompt }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,15 +46,9 @@ const HorizontalScrollView = ({ prompt }) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(
-          `http://localhost:8000/search?query=${encodeURIComponent(prompt)}&page=1&page_size=20`
-        );
+        const url = `http://localhost:8000/search?query=${encodeURIComponent(prompt)}&page=1&page_size=20&sort_by=relevance&min_price=1000&in_stock_only=true`;
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch data');
-        }
-        
-        const data = await response.json();
+        const data = await queueRequest(url);
 
         if (data && data.products) {
           setItems(data.products);
@@ -90,7 +113,6 @@ const HorizontalScrollView = ({ prompt }) => {
             </React.Fragment>
           ))}&nbsp;
         </span>
-
       </button>
 
       {loading ? (

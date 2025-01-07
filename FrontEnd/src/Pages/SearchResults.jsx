@@ -1,9 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Slider from '@mui/material/Slider';
 import './SearchResults.css';
 import AMZN from '../assets/AMZN.png';
 import Jarir from '../assets/Jarir.png';
 import Extra from '../assets/Extra.png';
 import { useLocation } from 'react-router-dom';
+import Box from '@mui/material/Box';
+
+function valuetext(value) {
+    return `${value} SAR`;
+}
+
+const minDistance = 200;
 
 const SearchResults = () => {
     const location = useLocation();
@@ -13,97 +21,118 @@ const SearchResults = () => {
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
-    const [priceRange, setPriceRange] = useState([0, 1000]);
-    const [selectedBrands, setSelectedBrands] = useState([]);
+    const [selectedStore, setSelectedStore] = useState('all');
     const [sortBy, setSortBy] = useState('relevance');
-
+    const [priceRange, setPriceRange] = useState([0, 5000]);
     const observer = useRef();
     const lastProductRef = useRef();
     const pageSize = 10;
     const sar = ' SAR';
+    const [showScrollTop, setShowScrollTop] = useState(false);
 
-
-    const getQueryFromUrl = () => {
-        const params = new URLSearchParams(window.location.search);
-        return params.get('query') || '';
-    };
-
-    const getStoreIcon = (store_id) => {
-        switch(store_id) {
-            case 1:
-                return AMZN;
-            case 2:
-                return Jarir;
-            case 3:
-                return Extra;
-            default:
-                return null;
+    const stores = [
+        { id: 'all', name: 'All Stores' },
+        { id: '1', name: 'Amazon' },
+        { id: '2', name: 'Jarir' },
+        { id: '3', name: 'Extra' }
+    ];
+    const formatPriceLabel = (value) => {
+        if (value >= 5000) {
+            return '5000+';
         }
+        return `${value}`;
     };
-
+    // Reset pagination when filters change
     useEffect(() => {
-        console.log('Resetting state for new sortBy:', sortBy); // Debugging
         setResults([]);
         setPage(1);
         setHasMore(true);
-    }, [location.search, sortBy]);
-    
-    useEffect(() => {
-        const fetchResults = async () => {
-            console.log('Fetching results...', { query, page, sortBy }); // Debugging
-            try {
-                setLoading(true);
-                const response = await fetch(
-                    `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}`
-                );
-                const data = await response.json();
-    
-                if (data && data.products) {
-                    setResults(prev => {
-                        if (page === 1) {
-                            return data.products;
-                        } else {
-                            const newResults = [...prev, ...data.products];
-                            const unique = Array.from(new Map(newResults.map(item => 
-                                [item.product_id, item])).values());
-                            return unique;
-                        }
-                    });
-                    setTotalResults(data.total);
-                    setHasMore(data.products.length === pageSize);
-                }
-            } catch (error) {
-                console.error('Error fetching search results:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-    
-        fetchResults();
-    }, [query, page, sortBy]);
+    }, [query, sortBy, selectedStore, priceRange[0], priceRange[1]]);
 
+    // Fetch results with debounced price range
+    const fetchResults = useCallback(async () => {
+        if (!query) return;
+        
+        try {
+            setLoading(true);
+            let url;
+            const maxPrice = priceRange[1] === 5000 ? 50000 : priceRange[1]; // Use 10x value for max price
+
+            if (selectedStore === 'all') {
+                url = `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${priceRange[1]}`;
+            } else {
+                url = `http://localhost:8000/search/?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}&store_filter=${selectedStore}&in_stock_only=true`;
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data && data.products) {
+                setResults(prev => {
+                    if (page === 1) {
+                        return data.products;
+                    }
+                    const newResults = [...prev, ...data.products];
+                    return Array.from(new Map(newResults.map(item => 
+                        [item.product_id, item])).values());
+                });
+                setTotalResults(data.total);
+                setHasMore(data.products.length === pageSize);
+            }
+        } catch (error) {
+            console.error('Error fetching search results:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [query, page, sortBy, selectedStore, priceRange[0], priceRange[1], pageSize]);
+
+    // Fetch results when dependencies change
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchResults();
+        }, 500); // Debounce time of 500ms
+
+        return () => clearTimeout(timer);
+    }, [fetchResults]);
+
+    // Scroll to top handler
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.pageYOffset > 300);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // Scroll to top on new search
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [location.search]);
+
+    // Intersection Observer setup for infinite scrolling
     useEffect(() => {
         if (!hasMore || loading) return;
-    
+
+        const handleObserver = (entries) => {
+            const [target] = entries;
+            if (target.isIntersecting && hasMore) {
+                setPage(prev => prev + 1);
+            }
+        };
+
         const options = {
             root: null,
             rootMargin: '20px',
             threshold: 0.1
         };
-    
-        const handleObserver = (entries) => {
-            const [target] = entries;
-            console.log('Observer triggered:', target.isIntersecting); // Debugging
-            if (target.isIntersecting && hasMore) {
-                setPage(prev => prev + 1);
-            }
-        };
-    
+
         const currentObserver = new IntersectionObserver(handleObserver, options);
+        
         if (lastProductRef.current) {
             currentObserver.observe(lastProductRef.current);
         }
-    
+
         return () => {
             if (lastProductRef.current) {
                 currentObserver.unobserve(lastProductRef.current);
@@ -112,23 +141,28 @@ const SearchResults = () => {
     }, [hasMore, loading]);
 
     const handleSortChange = (e) => {
-        console.log('Sort By Changed:', e.target.value); // Debugging
         setSortBy(e.target.value);
     };
 
-    const handlePriceChange = (e, index) => {
-        const newRange = [...priceRange];
-        newRange[index] = Number(e.target.value);
-        setPriceRange(newRange);
+    const handlePriceRangeChange = (event, newValue) => {
+        setPriceRange(newValue);
     };
 
-    const handleBrandChange = (brand) => {
-        setSelectedBrands(prev => {
-            if (prev.includes(brand)) {
-                return prev.filter(b => b !== brand);
-            }
-            return [...prev, brand];
-        });
+    const handleStoreChange = (storeId) => {
+        setSelectedStore(storeId);
+    };
+
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const getStoreIcon = (store_id) => {
+        switch(store_id) {
+            case 1: return AMZN;
+            case 2: return Jarir;
+            case 3: return Extra;
+            default: return null;
+        }
     };
 
     const handleProductClick = (productId) => {
@@ -137,7 +171,6 @@ const SearchResults = () => {
 
     return (
         <div className="search-container">
-            {/* Filters Sidebar */}
             <div className="filters-sidebar">
                 <div className="filter-section">
                     <h3>Sort By</h3>
@@ -155,46 +188,45 @@ const SearchResults = () => {
 
                 <div className="filter-section">
                     <h3>Price Range</h3>
-                    <div className="price-range">
-                        <input
-                            type="range"
-                            min="0"
-                            max="1000"
-                            value={priceRange[0]}
-                            onChange={(e) => handlePriceChange(e, 0)}
-                        />
-                        <input
-                            type="range"
-                            min="0"
-                            max="1000"
-                            value={priceRange[1]}
-                            onChange={(e) => handlePriceChange(e, 1)}
-                        />
-                        <div className="price-labels">
-                            <span>${priceRange[0]}</span>
-                            <span>${priceRange[1]}</span>
-                        </div>
+                    <Box sx={{ width: 210 }} marginLeft={'10px'}>
+                    <Slider
+                        value={priceRange}
+                        onChange={handlePriceRangeChange}
+                        valueLabelDisplay="auto"
+                        min={0}
+                        max={5000}
+                        step={100}
+                        
+                        valueLabelFormat={formatPriceLabel}
+                        getAriaValueText={valuetext}
+                    />
+                    </Box>
+                    <div className="price-range-display">
+                    <span>{formatPriceLabel(priceRange[0])} SAR</span>
+
+                    <span>{formatPriceLabel(priceRange[1])} SAR</span>
                     </div>
                 </div>
 
                 <div className="filter-section">
-                    <h3>Brands</h3>
-                    <div className="brand-list">
-                        {['Apple', 'Samsung', 'huawei', 'LG'].map(brand => (
-                            <label key={brand} className="brand-item">
+                    <h3>Stores</h3>
+                    <div className="store-list">
+                        {stores.map(store => (
+                            <label key={store.id} className="store-item">
                                 <input
-                                    type="checkbox"
-                                    checked={selectedBrands.includes(brand)}
-                                    onChange={() => handleBrandChange(brand)}
+                                    type="radio"
+                                    name="store"
+                                    value={store.id}
+                                    checked={selectedStore === store.id}
+                                    onChange={() => handleStoreChange(store.id)}
                                 />
-                                <span>{brand}</span>
+                                <span>{store.name}</span>
                             </label>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Main Content */}
             <div className="main-content">
                 <h1>Search Results for "{query}"</h1>
                 <p className="results-count">
@@ -202,8 +234,6 @@ const SearchResults = () => {
                 </p>
 
                 <div className="product-grid">
-
-                    
                     {results.map((result, index) => {
                         const isAvailable = result.availability && result.price !== null;
                         const priceClasses = isAvailable 
@@ -261,6 +291,16 @@ const SearchResults = () => {
                     </div>
                 )}
             </div>
+            
+            {showScrollTop && (
+                <button 
+                    className="scroll-to-top" 
+                    onClick={scrollToTop}
+                    aria-label="Scroll to top"
+                >
+                    ↑
+                </button>
+            )}
         </div>
     );
 };

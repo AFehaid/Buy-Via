@@ -146,7 +146,7 @@ html, body {
 }
 
 .button5 {
-  margin: 0 20px 20px;
+  margin: 0 20px 0;
   padding: 8px 16px;
   font-size: 1.5em;
   letter-spacing: 2px;
@@ -167,9 +167,12 @@ html, body {
   .horizontal-scroll-view {
       margin: 20px 0 10px 0;
   }
+  .actual-text{
+    font-size: 24px;
+  }
 
   .button5 {
-      margin: 0 20px 16px;
+      margin: 0 20px 0;
       font-size: 1.2em;
   }
 

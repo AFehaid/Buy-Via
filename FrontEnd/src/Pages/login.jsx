@@ -3,7 +3,6 @@ import axios from "axios"; // Import Axios for API calls
 import qs from 'qs';
 import { useAuth } from "../Components/Navbar/AuthProvider";
 import { useNavigate } from "react-router-dom";
-import "../style.css";
 import "../Pages/login.css";
 
 const Login = ({ onClose }) => {

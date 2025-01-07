@@ -1,38 +1,40 @@
 .button {
-    margin: 0;
-    height: auto;
-    background: transparent;
-    padding: 0;
-    border: none;
-    cursor: pointer;
-  }
-  
-  .button {
-    --border-right: 6px;
-    --text-stroke-color: rgba(255,255,255,0.6);
-    --animation-color: #ffffff;
-    --fs-size: 2em;
-    letter-spacing: 3px;
-    text-decoration: none;
-    font-size: var(--fs-size);
-    font-family: "Arial";
-    position: relative;
-    margin-right: 0px;
-    color: rgb(255, 255, 255);
-    -webkit-text-stroke: 1px var(--text-stroke-color);
-  }
-  .hover-text {
-    position: absolute;
-    box-sizing: border-box;
-    content: attr(data-text);
-    color: var(--animation-color);
-    width: 0%;
-    inset: 0;
-    overflow: hidden;
-    transition: 0.5s;
-    -webkit-text-stroke: 1.5px var(--animation-color);
-  }
-  .button:hover .hover-text {
-    width: 100%;
-    filter: drop-shadow(0 0 23px var(--animation-color))
-  }
+  margin: 0;
+  height: auto;
+  background: transparent;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  font-size: 2.5em;
+  font-family: "Arial", sans-serif;
+  color: white;
+}
+
+.text {
+  transition: opacity 0.3s ease;
+}
+
+.icon-container {
+  position: absolute;
+  left: -100%;
+  transition: left 0.5s ease;
+}
+
+.shopping-cart-icon {
+  font-size: 4.5em;
+  color: white;
+}
+
+.button:hover .text {
+  opacity: 0;
+}
+
+.button:hover .icon-container {
+  left: 50%;
+  transform: translateX(-50%);
+}
