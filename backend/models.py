@@ -43,6 +43,7 @@ class User(Base):
     password = Column(String, nullable=False)
     search_histories = relationship("SearchHistory", back_populates="user", cascade="all, delete-orphan")
     alerts = relationship("Alert", back_populates="user", cascade="all, delete-orphan")
+    recommendations = relationship("UserRecommendation", back_populates="user", cascade="all, delete-orphan")
 
 
 class Product(Base):
@@ -96,7 +97,7 @@ class SearchHistory(Base):
     __tablename__ = "search_histories"
     search_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
-    search_value = Column(String, nullable=False)  # The user's search term
+    search_value = Column(String, nullable=True)  # Allow NULL values for search term
     product_id = Column(Integer, ForeignKey("products.product_id", ondelete="SET NULL"), nullable=True)  # The product the user clicked on
     search_date = Column(DateTime, default=datetime.now(timezone.utc))
     user = relationship("User", back_populates="search_histories")
@@ -132,6 +133,17 @@ class ProductPriceHistory(Base):
     change_date = Column(DateTime, default=datetime.now(timezone.utc))
     product = relationship("Product", back_populates="price_histories")
 
+class UserRecommendation(Base):
+    __tablename__ = "user_recommendations"
+    recommendation_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
+    product_id = Column(Integer, ForeignKey("products.product_id", ondelete="CASCADE"))
+    recommendation_date = Column(DateTime, default=datetime.now(timezone.utc))
+    priority_score = Column(Float, nullable=False)
+
+    # Relationships
+    user = relationship("User", back_populates="recommendations")
+    product = relationship("Product")  # No back_populates needed here
 
 # Create all tables
 try:

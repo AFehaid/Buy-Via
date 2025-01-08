@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, asc, desc, case
 from pydantic import BaseModel
 
-from models import Product, ProductPriceHistory, SearchHistory
+from models import Product, ProductPriceHistory, SearchHistory, UserRecommendation
 from dependencies.deps import get_db, get_current_user, get_optional_current_user
 from fastapi.security import OAuth2PasswordBearer
 
@@ -244,6 +244,141 @@ router = APIRouter(prefix="/search", tags=["search"])
 # GET /search
 # ----------------------------------------
 
+@router.get("/recommendations", response_model=List[ProductResponse])
+def get_user_recommendations(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Fetch and return recommended products for the logged-in user, sorted by priority.
+    """
+    user_id = current_user["id"]
+
+    # Fetch recommendations, sorted by priority
+    recommendations = (
+        db.query(UserRecommendation)
+        .filter(UserRecommendation.user_id == user_id)
+        .join(Product, UserRecommendation.product_id == Product.product_id)
+        .order_by(UserRecommendation.priority_score.desc())
+        .limit(20)
+        .all()
+    )
+
+    if not recommendations:
+        raise HTTPException(status_code=404, detail="No recommendations found")
+
+    # Extract product IDs and fetch price history
+    product_ids = [rec.product.product_id for rec in recommendations]
+    last_old_prices = get_price_history(db, product_ids)
+
+    # Format response
+    return [
+        format_product_response(rec.product, last_old_prices.get(rec.product.product_id))
+        for rec in recommendations
+    ]
+
+@router.get("/related-products", response_model=List[ProductResponse])
+def get_related_products(
+    group_id: Optional[int] = Query(None, description="The group ID of the product"),
+    category_id: int = Query(..., description="The category ID of the product"),
+    limit: int = Query(20, ge=1, le=100, description="Maximum number of related products to fetch"),
+    db: Session = Depends(get_db),
+):
+    """
+    Fetch related products based on `group_id`. If the group has too few products,
+    fallback to fetching products based on `category_id`.
+    """
+    # Query products for the given group_id (if provided)
+    group_products_query = db.query(Product).filter(Product.group_id == group_id) if group_id else None
+
+    # Fetch products in the group if group_id is provided
+    group_products = group_products_query.limit(limit).all() if group_id else []
+
+    # If products in the group are less than the limit, fetch more from the same category
+    if len(group_products) < limit:
+        remaining_limit = limit - len(group_products)
+        category_products_query = db.query(Product).filter(
+            Product.category_id == category_id
+        )
+        if group_id:
+            category_products_query = category_products_query.filter(Product.group_id != group_id)  # Exclude the group
+        category_products = category_products_query.limit(remaining_limit).all()
+    else:
+        category_products = []
+
+    # Combine the results, keeping group products first
+    all_products = group_products + category_products
+
+    # Format response
+    product_ids = [product.product_id for product in all_products]
+    last_old_prices = get_price_history(db, product_ids)
+
+    return [
+        format_product_response(product, last_old_prices.get(product.product_id))
+        for product in all_products
+    ]
+
+@router.get("/category-products", response_model=SearchResponse)
+def search_products_by_category(
+    category_id: int = Query(..., description="Category ID to fetch products for"),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(10, ge=1, le=100, description="Number of items per page"),
+    sort_by: Optional[str] = Query("relevance", description="Sort by: relevance, price-low, price-high, newest"),
+    min_price: Optional[float] = Query(None, description="Minimum price filter"),
+    max_price: Optional[float] = Query(None, description="Maximum price filter"),
+    store_filter: Optional[int] = Query(None, description="Filter by store ID"),
+    in_stock_only: bool = Query(False, description="Filter by availability"),
+    db: Session = Depends(get_db),
+    current_user: Optional[dict] = Depends(get_optional_current_user),  # Optional dependency
+):
+    """
+    Fetch products for a specific category with optional filters and sorting.
+    """
+    # Start query to fetch products by category_id
+    query = db.query(Product).filter(Product.category_id == category_id)
+
+    # Apply filters
+    if min_price is not None:
+        query = query.filter(Product.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Product.price <= max_price)
+    if store_filter is not None:
+        query = query.filter(Product.store_id == store_filter)
+    if in_stock_only:
+        query = query.filter(Product.availability == True)
+
+    # Apply sorting
+    if sort_by == "price-low":
+        query = query.order_by(Product.price.asc())
+    elif sort_by == "price-high":
+        query = query.order_by(Product.price.desc())
+    elif sort_by == "newest":
+        query = query.order_by(Product.last_updated.desc())
+
+    # Count total results for pagination
+    total_results = query.count()
+
+    # Apply pagination
+    offset = (page - 1) * page_size
+    products = query.offset(offset).limit(page_size).all()
+
+    # Handle case where no products are found
+    if not products:
+        raise HTTPException(status_code=404, detail="No products found for the given category.")
+
+    # Get price history for the products
+    product_ids = [product.product_id for product in products]
+    last_old_prices = get_price_history(db, product_ids)
+
+    # Format products for response
+    response_products = [
+        format_product_response(product, last_old_prices.get(product.product_id))
+        for product in products
+    ]
+
+    return SearchResponse(total=total_results, products=response_products)
+
+
 @router.get("/", response_model=SearchResponse)
 def search_products(
     query: str = Query(..., min_length=1, description="Search query"),
@@ -292,10 +427,11 @@ def search_products(
     if current_user:
         search_history_entry = SearchHistory(
             user_id=current_user["id"],
-            search_value=query,
+            search_value=query or None,  # Use query if provided, otherwise set as NULL
         )
         db.add(search_history_entry)
         db.commit()
+
 
     # Format response
     products = [
@@ -325,12 +461,11 @@ def get_product(
     last_old_prices = get_price_history(db, [product_id])
     last_old_price = last_old_prices.get(product_id)
 
-    # Log product view for signed-in user
+    # Log product view for signed-in user without defaulting search_value
     if current_user:
         view_history_entry = SearchHistory(
             user_id=current_user["id"],
-            search_value=f"Viewed product {product_id}",
-            product_id=product_id,
+            product_id=product_id,  # Link to the product without a search_value
         )
         db.add(view_history_entry)
         db.commit()
