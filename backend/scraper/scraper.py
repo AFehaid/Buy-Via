@@ -189,6 +189,18 @@ class JarirScraper(StoreScraper):
 
         except (TimeoutException, WebDriverException) as e:
             print(f"Error during scraping: {e}")
+    
+    def scrape_arabic(self, url):
+        self.driver.get(url)
+        try:
+            title_element = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "h2.product-title__title"))
+            )
+            title = title_element.text.strip()
+            return {"store": self.store_name, "title_arabic": title}
+        except Exception as e:
+            print(f"[Jarir] Error fetching Arabic title: {e}")
+            return None
 
     def scrape_availability(self, product_link):
         """
@@ -320,6 +332,18 @@ class AmazonScraper(StoreScraper):
 
         except (TimeoutException, WebDriverException) as e:
             print(f"Error during scraping: {e}")
+
+    def scrape_arabic(self, url):
+        self.driver.get(url)
+        try:
+            title_element = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "span#productTitle"))
+            )
+            title = title_element.text.strip()
+            return {"store": self.store_name, "title_arabic": title}
+        except Exception as e:
+            print(f"[Amazon] Error fetching Arabic title: {e}")
+            return None
     
     def scrape_availability(self, product_link):
         """
@@ -421,6 +445,18 @@ class ExtraScraper(StoreScraper):
 
         except (TimeoutException, WebDriverException) as e:
             print(f"Error during scraping: {e}")
+    
+    def scrape_arabic(self, url):
+        self.driver.get(url)
+        try:
+            title_element = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "h1.product-name"))
+            )
+            title = title_element.text.strip()
+            return {"store": self.store_name, "title_arabic": title}
+        except Exception as e:
+            print(f"[Extra] Error fetching Arabic title: {e}")
+            return None
     
     def scrape_availability(self, product_link):
         """
