@@ -1,7 +1,7 @@
 # Buy-Via\backend\dependencies\deps.py
 from typing import Annotated
 from sqlalchemy.orm import Session
-from fastapi import Depends, HTTPException, status, Security
+from fastapi import Depends, HTTPException, status, Security, Request
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jose import jwt, JWTError
@@ -46,8 +46,14 @@ async def get_optional_current_user(token: str = Depends(oauth2_bearer_optional)
     return None
 
 # Authentication Dependency
-async def get_current_user(token: str = Depends(oauth2_bearer)):
+async def get_current_user(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     try:
+        # Remove "Bearer " prefix if present
+        if token.startswith("Bearer "):
+            token = token[7:]
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         user_id: int = payload.get("id")

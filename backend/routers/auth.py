@@ -1,5 +1,5 @@
 # backend/routers/auth.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from pydantic import BaseModel, EmailStr
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from datetime import timedelta, datetime, timezone
@@ -77,10 +77,12 @@ async def register_user(user: UserCreateRequest, db: db_dependency):
     db.refresh(new_user)
     return {"message": "User registered successfully"}
 
+
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
-    db: db_dependency,  # Non-default argument first
-    form_data: OAuth2PasswordRequestForm = Depends(),  # Default argument after
+    response: Response,
+    db: db_dependency,
+    form_data: OAuth2PasswordRequestForm = Depends(),
 ):
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
@@ -88,7 +90,18 @@ async def login_for_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
-    token = create_access_token(user.username, user.user_id, timedelta(minutes=30))
+    token = create_access_token(user.username, user.user_id, timedelta(seconds=1))  # Token expires in 1 second
+
+    # Set the token in an HTTP-only cookie
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {token}",
+        httponly=True,
+        secure=True,  # Only send over HTTPS
+        samesite="lax",  # Prevent CSRF attacks
+        max_age=31,  # Expire after 1 second
+    )
+
     return {"access_token": token, "token_type": "bearer"}
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

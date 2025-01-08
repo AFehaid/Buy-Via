@@ -1,71 +1,78 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useMemo, useState, useEffect } from "react";
 import axios from "axios";
+import qs from "qs";
 
 const AuthContext = createContext();
 
 const AuthProvider = (props) => {
   const { children } = props;
-
-  // Ensure token is initialized from localStorage
   const [token, setToken_] = useState(() => localStorage.getItem("token"));
-  const [isLoggedIn, setIsLoggedIn] = useState(!!token); // Derive initial login state
+  const [isLoggedIn, setIsLoggedIn] = useState(!!token);
+  const [logoutTimer, setLogoutTimer] = useState(null);
 
   const setToken = (newToken) => {
-      setToken_(newToken);
+    setToken_(newToken);
   };
 
-  const login = (newToken) => {
-      setToken(newToken);
-      localStorage.setItem("token", newToken);
-      setIsLoggedIn(true);
+  const login = async (username, password) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/auth/token",
+        qs.stringify({ username, password }), // Convert to form-urlencoded
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        const token = response.data.access_token;
+        setToken(token);
+        localStorage.setItem("token", token);
+        setIsLoggedIn(true);
+
+        setLogoutTimer(setTimeout(logout, 1800000)); 
+      }
+    } catch (error) {
+      console.error("Login failed:", error.response?.data || error.message);
+      throw error; // Rethrow the error to handle it in the Login component
+    }
   };
 
   const logout = () => {
-      setToken(null);
-      localStorage.removeItem("token");
-      setIsLoggedIn(false);
+    setToken(null);
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    if (logoutTimer) {
+      clearTimeout(logoutTimer);
+      setLogoutTimer(null);
+    }
   };
 
   useEffect(() => {
-      const validateToken = async () => {
-          if (token) {
-              try {
-                  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-                  const response = await axios.get(`http://localhost:8000/auth/verify-token/`, {
-                      params: { token }, // Send token explicitly
-                  });
-
-                  if (response.data.valid === "true") {
-                      setIsLoggedIn(true);
-                  } else {
-                      logout();
-                  }
-              } catch (error) {
-                  console.error("Token validation failed:", error);
-                  logout();
-              }
-          }
-      };
-
-      validateToken();
-  }, [token]);
+    return () => {
+      if (logoutTimer) {
+        clearTimeout(logoutTimer);
+      }
+    };
+  }, [logoutTimer]);
 
   const contextValue = useMemo(
-      () => ({
-          token,
-          isLoggedIn,
-          login,
-          logout,
-      }),
-      [token, isLoggedIn]
+    () => ({
+      token,
+      isLoggedIn,
+      login,
+      logout,
+    }),
+    [token, isLoggedIn]
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
-    return useContext(AuthContext);
+  return useContext(AuthContext);
 };
-
 
 export default AuthProvider;

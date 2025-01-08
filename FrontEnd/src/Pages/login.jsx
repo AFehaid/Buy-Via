@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios"; // Import Axios for API calls
-import qs from 'qs';
+import React, { useState } from "react";
+import axios from "axios";
+import qs from "qs";
 import { useAuth } from "../Components/Navbar/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import "../Pages/login.css";
@@ -19,7 +19,6 @@ const Login = ({ onClose }) => {
     confirmPassword: "",
   });
 
-  // Handle input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -28,7 +27,6 @@ const Login = ({ onClose }) => {
     }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -36,44 +34,21 @@ const Login = ({ onClose }) => {
 
     try {
       if (activeForm === "signIn") {
-        const response = await axios.post(
-          "http://localhost:8000/auth/token",
-          qs.stringify({
-            username: formData.username,
-            password: formData.password,
-          }),
-          {
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-          }
-        );
-
-        if (response.status === 200) {
-          const token = response.data.access_token; // Ensure the token is extracted correctly
-          if (token) {
-            setSuccess("Logged in successfully!");
-            login(token); // Use the extracted token
-            onClose(); // Close the modal after successful login
-            navigate("/"); // Redirect to the home page
-          } else {
-            setError("Failed to retrieve token from response.");
-          }
-        }
+        await login(formData.username, formData.password);
+        setSuccess("Logged in successfully!");
+        onClose();
+        navigate("/");
       } else if (activeForm === "signUp") {
         if (formData.password !== formData.confirmPassword) {
           setError("Passwords do not match.");
           return;
         }
 
-        const response = await axios.post(
-          "http://localhost:8000/auth/register",
-          {
-            username: formData.username,
-            email: formData.email,
-            password: formData.password,
-          }
-        );
+        const response = await axios.post("http://localhost:8000/auth/register", {
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        });
 
         if (response.status === 201) {
           setSuccess("Account created successfully! Please sign in.");
@@ -81,23 +56,10 @@ const Login = ({ onClose }) => {
         }
       }
     } catch (err) {
-      // Log error response for better understanding
-      console.error("API error:", err.response?.data);
-      setError(err.response?.data?.detail?.map(e => e.msg).join(", ") || "An error occurred. Please try again.");
-      if (err.response) {
-        // The request was made and the server responded with a status code
-        setError(err.response.data.message || "An error occurred. Please try again.");
-      } else if (err.request) {
-        // The request was made but no response was received
-        setError("No response from the server. Please check your connection.");
-      } else {
-        // Something happened in setting up the request
-        setError("Error in request setup: " + err.message);
-      }
+      setError(err.response?.data?.detail || "An error occurred. Please try again.");
     }
   };
 
-  // Close the modal when clicking outside
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -131,9 +93,9 @@ const Login = ({ onClose }) => {
         {activeForm === "signIn" && (
           <form className="auth-form" onSubmit={handleSubmit}>
             <input
-              type="username"
+              type="text"
               name="username"
-              placeholder="Email"
+              placeholder="Username"
               value={formData.username}
               onChange={handleInputChange}
               required

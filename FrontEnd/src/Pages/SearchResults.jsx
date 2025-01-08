@@ -57,16 +57,16 @@ const SearchResults = () => {
             setLoading(true);
             let url;
             const maxPrice = priceRange[1] === 5000 ? 50000 : priceRange[1]; // Use 10x value for max price
-
+    
             if (selectedStore === 'all') {
-                url = `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${priceRange[1]}`;
+                url = `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}`;
             } else {
                 url = `http://localhost:8000/search/?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}&store_filter=${selectedStore}&in_stock_only=true`;
             }
-
+    
             const response = await fetch(url);
             const data = await response.json();
-
+    
             if (data && data.products) {
                 setResults(prev => {
                     if (page === 1) {
