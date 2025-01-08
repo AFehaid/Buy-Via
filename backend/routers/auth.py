@@ -5,11 +5,12 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from datetime import timedelta, datetime, timezone
 from jose import jwt
 from sqlalchemy.orm import Session
-from dependencies.deps import db_dependency, bcrypt_context
+from dependencies.deps import db_dependency, bcrypt_context, get_optional_current_user
 from models import User
 import os
 from dotenv import load_dotenv
 from jose.exceptions import JWTError
+from typing import Optional
 
 load_dotenv()
 
@@ -42,6 +43,16 @@ def create_access_token(username: str, user_id: int, expires_delta: timedelta):
     expires = datetime.now(timezone.utc) + expires_delta
     encode.update({'exp': expires})
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+
+@router.get("/me")
+async def get_current_user_info(current_user: Optional[dict] = Depends(get_optional_current_user)):
+    """
+    Check if the user is logged in and return their information.
+    """
+    if current_user:
+        return {"logged_in": True, "user": current_user}
+    return {"logged_in": False, "user": None}
+
 
 # Register Route
 @router.post("/register", status_code=status.HTTP_201_CREATED)
