@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './Navbar.css';
 import Logo from '../Logo/Logo';
-import { FaUserCircle } from 'react-icons/fa';
+import { FaUserCircle, FaBell } from 'react-icons/fa';
 import Dropdown from 'react-bootstrap/Dropdown';
-import {useAuth}  from './AuthProvider';
+import { useAuth } from './AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import { FiChevronDown } from 'react-icons/fi';
-import Login from '../../Pages/login';
+import AuthModal from '../../Pages/login'; // Renamed from Login.jsx
 
 const Navbar = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -18,11 +18,98 @@ const Navbar = () => {
     const buttonRef = useRef(null);
     const navigate = useNavigate();
     const [showLoginModal, setShowLoginModal] = useState(false);
+    const [showSignUpModal, setShowSignUpModal] = useState(false);
+    const [alerts, setAlerts] = useState([]);
+
+
+    const handleCategoryClick = (categoryId) => {
+        // Redirect to the search results page with the category_id
+        navigate(`/search?category_id=${categoryId}`);
+        setIsMenuOpen(false);
+    };
+
+    useEffect(() => {
+        if (isLoggedIn) {
+            fetchAlerts();
+        }
+    }, [isLoggedIn]);
+
+
+
+
+    // WIP !!
+    const fetchProductDetails = async (product_id) => {
+        try {
+            const token = localStorage.getItem('token'); // Get the token from local storage
+            const response = await fetch(`http://localhost:8000/search/${product_id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`, // Send the token in the headers
+                },
+            });
+            if (response.ok) {
+                const data = await response.json();
+                return data;
+            } else {
+                console.error('Failed to fetch product details');
+                return null;
+            }
+        } catch (error) {
+            console.error('Error fetching product details:', error);
+            return null;
+        }
+    };
+
+    const fetchAlerts = async () => {
+        try {
+            const token = localStorage.getItem('token'); // Get the token from local storage
+            const user_id = 2; // Hardcoded user ID for testing
+            const response = await fetch(`http://localhost:8000/alerts/?user_id=${user_id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`, // Send the token in the headers
+                },
+            });
+            if (response.ok) {
+                const alerts = await response.json();
+                const alertsWithProductDetails = await Promise.all(
+                    alerts.map(async (alert) => {
+                        const productDetails = await fetchProductDetails(alert.product_id);
+                        const productName = productDetails?.title || 'Unknown Product';
+                        const truncatedName = productName.split(' ').slice(0, 4).join(' ') + '...';
+                        return {
+                            ...alert,
+                            product_id: productDetails?.product_id || '',
+                            product_name: truncatedName, // Use truncated name
+                            product_picture: productDetails?.image_url || '',
+                            product_price: productDetails?.price || 0,
+                        };
+                    })
+                );
+                setAlerts(alertsWithProductDetails);
+            } else {
+                console.error('Failed to fetch alerts');
+            }
+        } catch (error) {
+            console.error('Error fetching alerts:', error);
+        }
+    };
+    // WIP !!
+
+    const handleProductClick = (productId) => {
+        window.location.href = `/product/${productId}`;
+    };
+
+
+
 
     const handleLogout = () => {
         logout();
         navigate('/');
     };
+
 
       useEffect(() => {
         const handleClickOutside = (event) => {
@@ -63,48 +150,91 @@ const Navbar = () => {
 
       const categories = [
         {
-            header: 'Mobiles & Electronics',
-            icon: '📱',
-            subcategories: [
-                { name: 'Smartphones', featured: ['iPhone', 'Samsung', 'Xiaomi'] },
-                { name: 'Tablets', featured: ['iPad', 'Galaxy Tab', 'Huawei'] },
-                { name: 'Smartwatches', featured: ['Apple Watch', 'Galaxy Watch', 'Fitbit'] },
-                { name: 'Accessories', featured: ['Cases', 'Chargers', 'Screen Protectors'] }
-            ]
-        },
-        {
-            header: 'Home Appliances',
-            icon: '🏠',
-            subcategories: [
-                { name: 'Kitchen Appliances', featured: ['Refrigerators', 'Ovens', 'Dishwashers'] },
-                { name: 'Laundry', featured: ['Washers', 'Dryers', 'Irons'] },
-                { name: 'Climate Control', featured: ['AC', 'Heaters', 'Air Purifiers'] },
-                { name: 'Small Appliances', featured: ['Blenders', 'Coffee Makers', 'Toasters'] }
-            ]
-        },
-        {
-            header: 'Computers & Gaming',
+            header: 'Computers',
             icon: '💻',
             subcategories: [
-                { name: 'Laptops', featured: ['MacBook', 'Gaming', 'Ultrabooks'] },
-                { name: 'Desktop PCs', featured: ['Gaming PCs', 'All-in-One', 'Monitors'] },
-                { name: 'Gaming', featured: ['Consoles', 'Games', 'Accessories'] },
-                { name: 'Computer Parts', featured: ['GPUs', 'CPUs', 'Storage'] }
+                { id: 1, name: 'Desktops & Workstations' },
+                { id: 2, name: 'Laptops & Notebooks' },
+                { id: 3, name: 'Tablets & E-Readers' },
+                { id: 6, name: 'Computer Components' },
+                { id: 7, name: 'Computer Peripherals' },
+                { id: 11, name: 'Storage Devices' },
+                { id: 8, name: 'Networking Equipment' },
+                { id: 9, name: 'Printers & Scanners' }
             ]
         },
         {
-            header: 'Fashion & Lifestyle',
-            icon: '👔',
+            header: 'Smartphones',
+            icon: '📱',
             subcategories: [
-                { name: 'Men\'s Fashion', featured: ['Casual', 'Formal', 'Sports'] },
-                { name: 'Women\'s Fashion', featured: ['Dresses', 'Tops', 'Accessories'] },
-                { name: 'Kids\' Fashion', featured: ['Boys', 'Girls', 'Infants'] },
-                { name: 'Footwear', featured: ['Sneakers', 'Formal', 'Sports'] }
+                { id: 4, name: 'Smartphones' },
+                { id: 13, name: 'Phone Accessories' },
+                { id: 12, name: 'Wearable Technology' }
+            ]
+        },
+        {
+            header: 'Home & Kitchen',
+            icon: '🏠',
+            subcategories: [
+                { id: 23, name: 'Home Appliances' },
+                { id: 24, name: 'Kitchen Appliances' },
+                { id: 25, name: 'Furniture & Home Decor' },
+                { id: 26, name: 'Home Improvement Tools' },
+                { id: 27, name: 'Home Security & Surveillance' }
+            ]
+        },
+        {
+            header: 'Entertainment',
+            icon: '🎮',
+            subcategories: [
+                { id: 19, name: 'Gaming Consoles' },
+                { id: 20, name: 'Handheld Gaming Devices' },
+                { id: 21, name: 'Gaming Accessories' },
+                { id: 22, name: 'Video Games' },
+                { id: 18, name: 'TV & Home Theater' },
+                { id: 17, name: 'Audio Equipment' }
+            ]
+        },
+        {
+            header: 'Fashion',
+            icon: '👗',
+            subcategories: [
+                { id: 28, name: 'Clothing' },
+                { id: 29, name: 'Shoes' },
+                { id: 30, name: 'Fashion Accessories' },
+                { id: 31, name: 'Jewelry' },
+                { id: 32, name: 'Beauty Products' },
+                { id: 33, name: 'Health & Wellness' },
+                { id: 34, name: 'Personal Care & Hygiene' }
+            ]
+        },
+        {
+            header: 'Sports',
+            icon: '🏀',
+            subcategories: [
+                { id: 35, name: 'Sports Equipment' },
+                { id: 36, name: 'Outdoor Gear' },
+                { id: 37, name: 'Fitness Equipment' }
+            ]
+        },
+        {
+            header: 'Other Categories',
+            icon: '📦',
+            subcategories: [
+                { id: 15, name: 'Cameras & Camcorders' },
+                { id: 16, name: 'Camera Accessories' },
+                { id: 38, name: 'Books & Magazines' },
+                { id: 39, name: 'Music & Musical Instruments' },
+                { id: 45, name: 'Toys & Games' },
+                { id: 49, name: 'Pet Supplies' },
+                { id: 50, name: 'Baby Products' },
+                { id: 51, name: 'Garden & Patio' },
+                { id: 52, name: 'Gift Cards & Vouchers' },
+                { id: 53, name: 'Smart Home Devices' }
             ]
         }
     ];
-
-
+    
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
     };
@@ -115,9 +245,9 @@ const Navbar = () => {
                     <a href="/" className="logo-link">
                         <Logo className="logo" />
                     </a>
-                    <button 
+                    <button
                         ref={buttonRef}
-                        className={`categories-btn ${isMenuOpen ? 'active' : ''}`} 
+                        className={`categories-btn ${isMenuOpen ? 'active' : ''}`}
                         onClick={toggleMenu}
                         aria-expanded={isMenuOpen}
                     >
@@ -147,6 +277,37 @@ const Navbar = () => {
                             />
                         </form>
                     </div>
+                    {isLoggedIn ? (
+
+                    <Dropdown className='dropdown' drop='down-centered'>
+                        <Dropdown.Toggle as="button" className="alerts-btn">
+                            <FaBell size={30} color="#fff" />
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu className='dropdown-menu'>
+                            {alerts.length > 0 ? (
+                                alerts.map(alert => (
+                                    <Dropdown.Item
+                                        key={alert.alert_id}
+                                        className='dropdown-items'
+                                        onClick={() => handleProductClick(alert.product_id)} // Navigate to product page
+                                    >
+                                        <div className="alert-item">
+                                            <img src={alert.product_picture} alt={alert.product_name} className="alert-product-image" />
+                                            <div className="alert-product-details">
+                                                <div className="alert-product-name">{alert.product_name}</div>
+                                                <div className="alert-product-price">${alert.product_price}</div>
+                                                <div className="alert-threshold-price">Alert at: ${alert.threshold_price}</div>
+                                            </div>
+                                        </div>
+                                    </Dropdown.Item>
+                                ))
+                            ) : (
+                                <Dropdown.Item className='dropdown-items'>
+                                    No alerts
+                                </Dropdown.Item>
+                            )}
+                        </Dropdown.Menu>
+                    </Dropdown>) :(<></>) }
                     <Dropdown className='dropdown' drop='down-centered'>
                         <Dropdown.Toggle as="button" className="account-btn">
                             <FaUserCircle size={30} color="#fff" />
@@ -162,41 +323,38 @@ const Navbar = () => {
                                 </>
                             ) : (
                                 <>
-                                    <Dropdown.Item className='dropdown-items' onClick={() => setShowLoginModal(true)}>Login</Dropdown.Item>
-                                    <Dropdown.Item className='dropdown-items' href="/Sign_Up">Sign Up</Dropdown.Item>
+                                    <Dropdown.Item className='dropdown-items' onClick={() => setShowLoginModal(true)}>
+                                        Login
+                                    </Dropdown.Item>
+                                    <Dropdown.Item className='dropdown-items' onClick={() => setShowSignUpModal(true)}>
+                                        Sign Up
+                                    </Dropdown.Item>
                                 </>
                             )}
                         </Dropdown.Menu>
                     </Dropdown>
-                    {showLoginModal && <Login onClose={() => setShowLoginModal(false)} />}
+
+                    {showLoginModal && <AuthModal mode="signIn" onClose={() => setShowLoginModal(false)} />}
+                    {showSignUpModal && <AuthModal mode="signUp" onClose={() => setShowSignUpModal(false)} />}
                 </div>
             </div>
 
-            <div 
-                className={`category-mega-menu ${isMenuOpen ? 'show' : ''}`}
-                ref={menuRef}
-            >
-
+            <div className={`category-mega-menu ${isMenuOpen ? 'show' : ''}`} ref={menuRef}>
                 <div className="category-container">
                     {categories.map((category, index) => (
                         <div key={index} className="category-section">
                             <div className="category-header">
-                                <span className="category-icon">{category.icon}</span>
                                 <h3>{category.header}</h3>
+                                <span className="category-icon">{category.icon}</span>
                             </div>
                             <div className="subcategories-grid">
                                 {category.subcategories.map((subcat, subIndex) => (
-                                    <div key={subIndex} className="subcategory-column">
+                                    <div
+                                        key={subIndex}
+                                        className="subcategory-column"
+                                        onClick={() => handleCategoryClick(subcat.id)}
+                                    >
                                         <h4 className="subcategory-title">{subcat.name}</h4>
-                                        <ul className="featured-list">
-                                            {subcat.featured.map((item, itemIndex) => (
-                                                <li key={itemIndex}>
-                                                    <a href={`/category/${encodeURIComponent(category.header)}/${encodeURIComponent(subcat.name)}/${encodeURIComponent(item)}`}>
-                                                        {item}
-                                                    </a>
-                                                </li>
-                                            ))}
-                                        </ul>
                                     </div>
                                 ))}
                             </div>

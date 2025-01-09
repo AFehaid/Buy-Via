@@ -1,5 +1,5 @@
 # backend/routers/alert.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status,Query
 from pydantic import BaseModel, PositiveFloat
 from typing import List, Optional
 from sqlalchemy.orm import Session
@@ -78,19 +78,20 @@ async def create_alert(
 @router.get("/", response_model=List[AlertResponse])
 async def list_user_alerts(
     db: db_dependency,
-    current_user: dict = Depends(get_current_user)
+    user_id: int = Query(..., description="The ID of the user to fetch alerts for"),
 ):
     """
-    List all alerts for the currently signed-in user.
+    List all alerts for a specific user by user ID.
     """
-    alerts = db.query(Alert).filter(Alert.user_id == current_user["id"]).all()
+    alerts = db.query(Alert).filter(Alert.user_id == user_id).all()
     return [
         AlertResponse(
             alert_id=a.alert_id,
             product_id=a.product_id,
             threshold_price=a.threshold_price,
-            alert_status=a.alert_status
-        ) for a in alerts
+            alert_status=a.alert_status,
+        )
+        for a in alerts
     ]
 
 @router.put("/{alert_id}", response_model=AlertResponse)

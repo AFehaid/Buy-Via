@@ -14,6 +14,7 @@ import Img_Slider from './Components/Img_Slider/Img_Slider'
 import Sign_up from "./Pages/sign_up";
 import AuthProvider from "./Components/Navbar/AuthProvider";
 import ProductDetails from "./Pages/ProductDetails";
+import Footer from "./Components/Footer/Footer";
 
 
 
@@ -41,7 +42,7 @@ function App() {
         <Route path="/product/:productId" element={<ProductDetails />} />
 
       </Routes>
-      
+      <Footer/>
       </main>
 
       </Router>

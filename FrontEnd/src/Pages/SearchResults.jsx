@@ -15,7 +15,8 @@ const minDistance = 200;
 
 const SearchResults = () => {
     const location = useLocation();
-    const query = new URLSearchParams(location.search).get('query') || '';
+    const queryParams = new URLSearchParams(location.search);
+    const query = queryParams.get('query') || '';
     const [results, setResults] = useState([]);
     const [totalResults, setTotalResults] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -24,11 +25,16 @@ const SearchResults = () => {
     const [selectedStore, setSelectedStore] = useState('all');
     const [sortBy, setSortBy] = useState('relevance');
     const [priceRange, setPriceRange] = useState([0, 5000]);
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
+    const [expandedMainCategories, setExpandedMainCategories] = useState([]);
+    const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true); // Collapsed by default on mobile
     const observer = useRef();
     const lastProductRef = useRef();
     const pageSize = 10;
     const sar = ' SAR';
     const [showScrollTop, setShowScrollTop] = useState(false);
+    const categoryId = queryParams.get('category_id') || 'all';
 
     const stores = [
         { id: 'all', name: 'All Stores' },
@@ -36,37 +42,146 @@ const SearchResults = () => {
         { id: '2', name: 'Jarir' },
         { id: '3', name: 'Extra' }
     ];
+
+    const categories = [
+        {
+            header: 'Computers',
+            icon: '💻',
+            subcategories: [
+                { id: 1, name: 'Desktops & Workstations' },
+                { id: 2, name: 'Laptops & Notebooks' },
+                { id: 3, name: 'Tablets & E-Readers' },
+                { id: 6, name: 'Computer Components' },
+                { id: 7, name: 'Computer Peripherals' },
+                { id: 8, name: 'Networking Equipment' },
+                { id: 9, name: 'Printers & Scanners' },
+                { id: 11, name: 'Storage Devices' }
+            ]
+        },
+        {
+            header: 'Smartphones',
+            icon: '📱',
+            subcategories: [
+                { id: 4, name: 'Smartphones & Cell Phones' },
+                { id: 12, name: 'Wearable Technology' },
+                { id: 13, name: 'Phone Accessories' },
+                { id: 14, name: 'Device Accessories' }
+            ]
+        },
+        {
+            header: 'Home & Kitchen',
+            icon: '🏠',
+            subcategories: [
+                { id: 23, name: 'Home Appliances' },
+                { id: 24, name: 'Kitchen Appliances' },
+                { id: 25, name: 'Furniture & Home Decor' },
+                { id: 26, name: 'Home Improvement Tools' },
+                { id: 27, name: 'Home Security & Surveillance' }
+            ]
+        },
+        {
+            header: 'Entertainment',
+            icon: '🎮',
+            subcategories: [
+                { id: 19, name: 'Gaming Consoles' },
+                { id: 20, name: 'Handheld Gaming Devices' },
+                { id: 21, name: 'Gaming Accessories' },
+                { id: 22, name: 'Video Games' },
+                { id: 18, name: 'TV & Home Theater' },
+                { id: 17, name: 'Audio Equipment' }
+            ]
+        },
+        {
+            header: 'Fashion',
+            icon: '👗',
+            subcategories: [
+                { id: 28, name: 'Clothing' },
+                { id: 29, name: 'Shoes' },
+                { id: 30, name: 'Fashion Accessories' },
+                { id: 31, name: 'Jewelry' },
+                { id: 32, name: 'Beauty Products' },
+                { id: 33, name: 'Health & Wellness' },
+                { id: 34, name: 'Personal Care & Hygiene' }
+            ]
+        },
+        {
+            header: 'Sports',
+            icon: '🏀',
+            subcategories: [
+                { id: 35, name: 'Sports Equipment' },
+                { id: 36, name: 'Outdoor Gear' },
+                { id: 37, name: 'Fitness Equipment' }
+            ]
+        },
+        {
+            header: 'Other Categories',
+            icon: '📦',
+            subcategories: [
+                { id: 15, name: 'Cameras & Camcorders' },
+                { id: 16, name: 'Camera Accessories' },
+                { id: 38, name: 'Books & Magazines' },
+                { id: 39, name: 'Music & Musical Instruments' },
+                { id: 45, name: 'Toys & Games' },
+                { id: 49, name: 'Pet Supplies' },
+                { id: 50, name: 'Baby Products' },
+                { id: 51, name: 'Garden & Patio' },
+                { id: 52, name: 'Gift Cards & Vouchers' },
+                { id: 53, name: 'Smart Home Devices' }
+            ]
+        }
+    ];
+
+    const getCategoryName = (categoryId) => {
+        for (const category of categories) {
+            const subcategory = category.subcategories.find(sub => sub.id === parseInt(categoryId));
+            if (subcategory) {
+                return subcategory.name;
+            }
+        }
+        return null;
+    };
+    const categoryName = getCategoryName(categoryId);
+    
+    const toggleFilters = () => {
+        setIsFiltersCollapsed((prev) => !prev); // Toggle filters visibility on mobile
+    };
     const formatPriceLabel = (value) => {
         if (value >= 5000) {
             return '5000+';
         }
         return `${value}`;
     };
+
+
+    useEffect(() => {
+        setResults([]);
+        setPage(1);
+        setHasMore(true);
+    }, [query, sortBy, selectedStore, priceRange[0], priceRange[1], categoryId]);
+
     // Reset pagination when filters change
     useEffect(() => {
         setResults([]);
         setPage(1);
         setHasMore(true);
-    }, [query, sortBy, selectedStore, priceRange[0], priceRange[1]]);
+    }, [query, sortBy, selectedStore, priceRange[0], priceRange[1], selectedCategory]);
 
     // Fetch results with debounced price range
     const fetchResults = useCallback(async () => {
-        if (!query) return;
-        
         try {
             setLoading(true);
             let url;
             const maxPrice = priceRange[1] === 5000 ? 50000 : priceRange[1]; // Use 10x value for max price
-    
-            if (selectedStore === 'all') {
+
+            if (categoryId === 'all') {
                 url = `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}`;
             } else {
-                url = `http://localhost:8000/search/?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}&store_filter=${selectedStore}&in_stock_only=true`;
+                url = `http://localhost:8000/search/category-products?category_id=${categoryId}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}`;
             }
-    
+
             const response = await fetch(url);
             const data = await response.json();
-    
+
             if (data && data.products) {
                 setResults(prev => {
                     if (page === 1) {
@@ -84,7 +199,7 @@ const SearchResults = () => {
         } finally {
             setLoading(false);
         }
-    }, [query, page, sortBy, selectedStore, priceRange[0], priceRange[1], pageSize]);
+    }, [query, page, sortBy, selectedStore, priceRange[0], priceRange[1], categoryId, pageSize]);
 
     // Fetch results when dependencies change
     useEffect(() => {
@@ -152,12 +267,29 @@ const SearchResults = () => {
         setSelectedStore(storeId);
     };
 
+    const handleCategoryChange = (categoryId) => {
+        setSelectedCategory(categoryId);
+        setPage(1); // Reset to the first page when a new category is selected
+    };
+
+    const toggleCategoriesSection = () => {
+        setIsCategoriesExpanded((prev) => !prev); // Toggle the entire Categories section
+    };
+
+    const toggleMainCategory = (header) => {
+        setExpandedMainCategories((prev) =>
+            prev.includes(header)
+                ? prev.filter((h) => h !== header) // Collapse if already expanded
+                : [...prev, header] // Expand if collapsed
+        );
+    };
+
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const getStoreIcon = (store_id) => {
-        switch(store_id) {
+        switch (store_id) {
             case 1: return AMZN;
             case 2: return Jarir;
             case 3: return Extra;
@@ -171,12 +303,19 @@ const SearchResults = () => {
 
     return (
         <div className="search-container">
-            <div className="filters-sidebar">
+            {/* Filters Header (Mobile) */}
+            <div className="filters-header" onClick={toggleFilters}>
+                <h3>Filters</h3>
+                <span className="dropdown-icon">{isFiltersCollapsed ? '+' : '−'}</span>
+            </div>
+
+            {/* Filters Section */}
+            <div className={`filters-sidebar ${isFiltersCollapsed ? 'collapsed' : ''}`}>
                 <div className="filter-section">
                     <h3>Sort By</h3>
                     <select 
                         value={sortBy}
-                        onChange={handleSortChange}
+                        onChange={(e) => setSortBy(e.target.value)}
                         className="sort-select"
                     >
                         <option value="relevance">Relevance</option>
@@ -189,46 +328,88 @@ const SearchResults = () => {
                 <div className="filter-section">
                     <h3>Price Range</h3>
                     <Box sx={{ width: 210 }} marginLeft={'10px'}>
-                    <Slider
-                        value={priceRange}
-                        onChange={handlePriceRangeChange}
-                        valueLabelDisplay="auto"
-                        min={0}
-                        max={5000}
-                        step={100}
-                        
-                        valueLabelFormat={formatPriceLabel}
-                        getAriaValueText={valuetext}
-                    />
+                        <Slider
+                            value={priceRange}
+                            onChange={(e, newValue) => setPriceRange(newValue)}
+                            valueLabelDisplay="auto"
+                            min={0}
+                            max={5000}
+                            step={100}
+                            valueLabelFormat={(value) => (value >= 5000 ? '5000+' : `${value}`)}
+                            getAriaValueText={valuetext}
+                        />
                     </Box>
                     <div className="price-range-display">
-                    <span>{formatPriceLabel(priceRange[0])} SAR</span>
-
-                    <span>{formatPriceLabel(priceRange[1])} SAR</span>
+                        <span>{priceRange[0]} SAR</span>
+                        <span>{priceRange[1]} SAR</span>
                     </div>
                 </div>
 
                 <div className="filter-section">
                     <h3>Stores</h3>
                     <div className="store-list">
-                        {stores.map(store => (
+                        {stores.map((store) => (
                             <label key={store.id} className="store-item">
                                 <input
                                     type="radio"
                                     name="store"
                                     value={store.id}
                                     checked={selectedStore === store.id}
-                                    onChange={() => handleStoreChange(store.id)}
+                                    onChange={() => setSelectedStore(store.id)}
                                 />
                                 <span>{store.name}</span>
                             </label>
                         ))}
                     </div>
                 </div>
+
+                <div className="filter-section">
+                    <div className="categories-header" onClick={() => setIsCategoriesExpanded((prev) => !prev)}>
+                        <h3>Categories</h3>
+                        <span className="dropdown-icon">{isCategoriesExpanded ? '−' : '+'}</span>
+                    </div>
+                    {isCategoriesExpanded && (
+                        <div className="category-dropdown">
+                            {categories.map((category) => (
+                                <div key={category.header} className="category-item">
+                                    <div
+                                        className="main-category-header"
+                                        onClick={() => toggleMainCategory(category.header)}
+                                    >
+                                        <span>{category.icon} {category.header}</span>
+                                        <span className="dropdown-icon">
+                                            {expandedMainCategories.includes(category.header) ? '−' : '+'}
+                                        </span>
+                                    </div>
+                                    {expandedMainCategories.includes(category.header) && (
+                                        <div className="sub-category-list">
+                                            {category.subcategories.map((subCategory) => (
+                                                <div
+                                                    key={subCategory.id}
+                                                    className={`sub-category-item ${selectedCategory === subCategory.id ? 'selected' : ''}`}
+                                                    onClick={() => handleCategoryChange(subCategory.id)}
+                                                >
+                                                    {subCategory.name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="main-content">
-                <h1>Search Results for "{query}"</h1>
+                {/* Conditional Header */}
+                {query ? (
+                    <h1>Search Results for "{query}"</h1>
+                ) : categoryName ? (
+                    <h1>{categoryName}</h1>
+                ) : (
+                    <h1>All Products</h1>
+                )}
                 <p className="results-count">
                     {totalResults > 0 ? `Showing ${results.length} of ${totalResults} results` : 'No results found'}
                 </p>

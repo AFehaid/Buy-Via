@@ -1,6 +1,6 @@
 .container {
     max-width: 1200px;
-    margin: 0 auto;
+    margin: 20px auto;
     padding: 15px;
     display: flex;
     flex-wrap: wrap;
@@ -25,7 +25,7 @@
     width: 100%;
     position: relative;
     padding-top: 100%; /* 1:1 Aspect Ratio */
-    background-color: #f7f7f7;
+    background-color: #fff;
     border-radius: 8px;
     overflow: hidden;
 }

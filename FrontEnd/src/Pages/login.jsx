@@ -5,10 +5,10 @@ import { useAuth } from "../Components/Navbar/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import "../Pages/login.css";
 
-const Login = ({ onClose }) => {
+const AuthModal = ({ mode, onClose }) => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [activeForm, setActiveForm] = useState("signIn");
+  const [activeForm, setActiveForm] = useState(mode); // Set initial form based on mode
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -52,7 +52,7 @@ const Login = ({ onClose }) => {
 
         if (response.status === 201) {
           setSuccess("Account created successfully! Please sign in.");
-          setActiveForm("signIn");
+          setActiveForm("signIn"); // Switch to sign-in form after successful signup
         }
       }
     } catch (err) {
@@ -154,4 +154,4 @@ const Login = ({ onClose }) => {
   );
 };
 
-export default Login;
+export default AuthModal;
