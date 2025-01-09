@@ -57,7 +57,25 @@ body {
     font-weight: 600;
     margin-bottom: 12px;
 }
+.filters-header {
+    display: none; /* Hidden by default */
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #f1f1f1;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
 
+.filters-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.filters-header .dropdown-icon {
+    font-size: 18px;
+}
 .sort-select {
     width: 100%;
     padding: 8px;
@@ -238,6 +256,78 @@ body {
     background-color: #2980b9;
 }
 
+.categories-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px;
+    background-color: #f1f1f1;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.categories-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.categories-header .dropdown-icon {
+    font-size: 18px;
+}
+
+.category-dropdown {
+    margin-top: 10px;
+}
+
+.category-item {
+    margin-bottom: 10px;
+}
+
+.main-category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background-color: #f5f5f5;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 5px;
+}
+
+.main-category-header span {
+    font-size: 14px;
+}
+
+.main-category-header .dropdown-icon {
+    font-size: 16px;
+}
+
+.sub-category-list {
+    margin-left: 15px;
+    margin-top: 5px;
+}
+
+.sub-category-item {
+    padding: 6px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 3px;
+    background-color: #f9f9f9;
+    transition: background-color 0.2s;
+}
+
+.sub-category-item:hover {
+    background-color: #e0e0e0;
+}
+
+.sub-category-item.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+
 /* Responsive Design */
 @media (max-width: 1200px) {
     .product-grid {
@@ -298,5 +388,24 @@ body {
     .store-icon {
         width: 20px;
         height: 20px;
+    }
+}
+/* Mobile Styles */
+@media (max-width: 768px) {
+    .search-container {
+        flex-direction: column;
+    }
+
+    .filters-sidebar {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .filters-header {
+        display: flex; /* Show the filters header on mobile */
+    }
+
+    .filters-sidebar.collapsed {
+        display: none; /* Hide filters when collapsed */
     }
 }
