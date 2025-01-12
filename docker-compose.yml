@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/dir
+    environment:
+      - DB_URL=sqlite:///./backend/buy_via.db
+      - API_URL=http://localhost:5173
+    depends_on:
+      - frontend
+
+  frontend:
+    build:
+      context: ./FrontEnd
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"

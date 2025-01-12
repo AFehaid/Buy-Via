@@ -1,10 +1,10 @@
-# scraper.py
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException, NoSuchElementException
+from bs4 import BeautifulSoup
 from time import sleep
 import urllib.parse
 import platform
@@ -19,44 +19,32 @@ class StoreScraper:
         self.driver = self.setup_driver()
 
     def setup_driver(self):
-        project_dir = os.path.dirname(os.path.abspath(__file__))
 
-        # Define the path to chromedriver within the project directory
-        if platform.system() == "Linux":
-            driver_path = os.path.join(project_dir, "chromedriver")
-        elif platform.system() == "Windows":
-            driver_path = os.path.join(project_dir, "chromedriver.exe")
-        else:
-            raise Exception("Unsupported OS. This script supports only Windows and Linux.")
-
-        # Ensure the chromedriver has executable permissions (only needed for Linux)
-        if platform.system() == "Linux" and not os.access(driver_path, os.X_OK):
-            os.chmod(driver_path, stat.S_IEXEC)
-
-        # Set up the Chrome service with the specified path
-        service = Service(executable_path=driver_path)
-
-        # Set up Chrome options
         options = webdriver.ChromeOptions()
-        options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option('useAutomationExtension', False)
-        options.add_argument("--disable-blink-features=AutomationControlled")
-        options.add_argument("--window-size=1920x1080")
-        options.add_argument("--ignore-certificate-errors")
-        options.add_argument("--ignore-ssl-errors")
-        options.add_argument("--allow-insecure-localhost")
-        options.add_argument("--headless")  # Ensure this line is present for headless mode
+        # Basic optimizations
+        options.add_argument("--headless")  # Run without GUI
+        options.add_argument("--disable-gpu")  # Disable GPU for headless mode
+        options.add_argument("--no-sandbox")  # Required for Docker containers
+        options.add_argument("--disable-dev-shm-usage")  # Use /tmp for shared memory
 
-        # Initialize the Chrome WebDriver with the specified service and options
-        driver = webdriver.Chrome(service=service, options=options)
+        # Lower memory and CPU consumption
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-infobars")
+        options.add_argument("--disable-browser-side-navigation")
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_argument("--disable-popup-blocking")
+
+        # Use a custom user-agent to avoid detection
+        options.add_argument(
+            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
+        )
+        driver = webdriver.Chrome(options=options)
         return driver
 
     def quit_driver(self):
         if self.driver:
             self.driver.quit()
             self.driver = None
-
 
     def clean_image_url(self, image_url):
         if image_url.startswith("//"):
@@ -76,34 +64,20 @@ class StoreScraper:
 
     @staticmethod
     def normalize_price(price):
-        """
-        Standardize price format to a consistent structure (e.g., 3499.00, 1999.00).
-        Handles unexpected formats gracefully, including multi-line or messy inputs.
-        """
         try:
-            # Replace line breaks and extra spaces
             price = price.replace("\n", "").strip()
-
-            # Remove all non-numeric characters except commas and periods
             price = re.sub(r"[^\d.,]", "", price)
-
-            # Remove commas to handle cases like "3,499" correctly
             price = price.replace(",", "")
-
-            # Convert to float and format to two decimal places
             normalized_price = float(price)
             return f"{normalized_price:.2f}"
         except (ValueError, IndexError):
-            # Return "N/A" if parsing fails
             return "N/A"
+
 
 class JarirScraper(StoreScraper):
     def handle_popups(self):
-        """
-        Handle popups like language selection and cookie consent.
-        """
+        """Handle popups for language selection and cookie consent."""
         try:
-            # Handle language popup
             WebDriverWait(self.driver, 5).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "button#switcher-button-en"))
             ).click()
@@ -112,7 +86,6 @@ class JarirScraper(StoreScraper):
             print("Language popup did not appear or was already handled.")
 
         try:
-            # Handle cookie consent popup
             WebDriverWait(self.driver, 5).until(
                 EC.element_to_be_clickable((By.ID, "onetrust-accept-btn-handler"))
             ).click()
@@ -121,9 +94,7 @@ class JarirScraper(StoreScraper):
             print("Cookie consent popup did not appear or was already handled.")
 
     def scrape_products(self, search_value, max_scrolls=5):
-        """
-        Scrape products from Jarir for a given search value.
-        """
+        """Scrape products from the Jarir website."""
         encoded_search_value = urllib.parse.quote(search_value)
         url = f"https://www.jarir.com/sa-en/catalogsearch/result?search={encoded_search_value}"
 
@@ -131,7 +102,6 @@ class JarirScraper(StoreScraper):
             self.driver.get(url)
             self.handle_popups()
 
-            # Wait for product tiles to load
             WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "product-tile"))
             )
@@ -140,47 +110,51 @@ class JarirScraper(StoreScraper):
             unique_products = set()
 
             def extract_products():
-                """
-                Extract product details from the current page.
-                """
-                try:
-                    product_elements = self.driver.find_elements(By.CLASS_NAME, "product-tile")
-                    for product in product_elements:
-                        try:
-                            title = product.find_element(By.CLASS_NAME, "product-title__title").text
-                            link = product.find_element(By.CSS_SELECTOR, "a.product-tile__link").get_attribute("href")
-                            raw_price = product.find_element(By.CLASS_NAME, "price").text if product.find_elements(By.CLASS_NAME, "price") else "N/A"
-                            price = self.normalize_price(raw_price)
-                            info = product.find_element(By.CLASS_NAME, "product-title__info").text.strip() if product.find_elements(By.CLASS_NAME, "product-title__info") else "No additional info available"
-                            image_url = next((img.get_attribute("src") for img in product.find_elements(By.CSS_SELECTOR, "img.image--contain") if 'placeholder' not in img.get_attribute("src")), "")
+                """Extract product details using BeautifulSoup."""
+                page_source = self.driver.page_source
+                soup = BeautifulSoup(page_source, "html.parser")
+                product_elements = soup.find_all("div", class_="product-tile")
 
-                            product_key = (title, link)
-                            if product_key not in unique_products:
-                                unique_products.add(product_key)
-                                yield {
-                                    "store": self.store_name,
-                                    "title": title,
-                                    "link": link,
-                                    "price": price,
-                                    "info": info,
-                                    "image_url": image_url
-                                }
-                        except NoSuchElementException:
-                            print(f"Failed to extract product details. Skipping product...")
-                except Exception as e:
-                    print(f"Error extracting products: {e}")
+                if not product_elements:
+                    print("No product tiles found. The page structure might have changed.")
 
-            # Extract products from the first page
+                for product in product_elements:
+                    try:
+                        title_elem = product.find("div", class_="product-title__title")
+                        link_elem = product.find("a", class_="product-tile__link")
+                        price_elem = product.find("div", class_="price")
+                        info_elem = product.find("div", class_="product-title__info")
+                        image_elem = product.find("img", class_="image--contain")
+
+                        title = title_elem.get_text(strip=True) if title_elem else "No title"
+                        link = link_elem["href"] if link_elem else "No link"
+                        raw_price = price_elem.get_text(strip=True) if price_elem else "N/A"
+                        price = self.normalize_price(raw_price)
+                        info = info_elem.get_text(strip=True) if info_elem else "No additional info available"
+                        image_url = image_elem["src"] if image_elem else ""
+
+                        product_key = (title, link)
+                        if product_key not in unique_products:
+                            unique_products.add(product_key)
+                            yield {
+                                "store": self.store_name,
+                                "title": title,
+                                "link": link,
+                                "price": price,
+                                "info": info,
+                                "image_url": image_url
+                            }
+                    except AttributeError as e:
+                        print(f"Error extracting product details: {e}. Skipping product...")
+
             yield from extract_products()
 
-            # Scroll and extract products from additional content loaded dynamically
+            # Implement scrolling for dynamic content loading
             last_height = self.driver.execute_script("return document.body.scrollHeight")
             for _ in range(max_scrolls):
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                sleep(3)  # Allow time for dynamic content to load
+                sleep(3)
                 yield from extract_products()
-
-                # Check if scrolling has reached the bottom of the page
                 new_height = self.driver.execute_script("return document.body.scrollHeight")
                 if new_height == last_height:
                     print("No more products to load.")
@@ -189,7 +163,7 @@ class JarirScraper(StoreScraper):
 
         except (TimeoutException, WebDriverException) as e:
             print(f"Error during scraping: {e}")
-    
+
     def scrape_arabic(self, url):
         self.driver.get(url)
         try:
@@ -242,6 +216,7 @@ class JarirScraper(StoreScraper):
 
 class AmazonScraper(StoreScraper):
     def scrape_products(self, search_value, max_pages=5):
+        """Scrape products from Amazon for a given search value."""
         encoded_search_value = urllib.parse.quote(search_value)
         base_url = f"https://www.amazon.sa/s?k={encoded_search_value}&language=en_AE"
 
@@ -251,7 +226,7 @@ class AmazonScraper(StoreScraper):
                 print(f"Loading page {page} for Amazon - URL: {url}")
                 self.driver.get(url)
 
-                # Wait for the main slot to ensure page load
+                # Wait for the product list to load
                 WebDriverWait(self.driver, 20).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div.s-main-slot"))
                 )
@@ -260,50 +235,32 @@ class AmazonScraper(StoreScraper):
                 unique_products = set()
 
                 def extract_products():
-                    # Each product is typically in 'div.s-result-item[data-component-type="s-search-result"]'
-                    product_elements = self.driver.find_elements(
-                        By.CSS_SELECTOR,
-                        "div.s-result-item[data-component-type='s-search-result']"
-                    )
+                    """Extract product details using BeautifulSoup."""
+                    page_source = self.driver.page_source
+                    soup = BeautifulSoup(page_source, "html.parser")
+                    product_elements = soup.select("div.s-result-item[data-component-type='s-search-result']")
+
                     for product in product_elements:
                         try:
-                            # --- Title & Link ---
-                            # Common pattern: <a class="a-link-normal s-line-clamp-4..." ...><h2 ...><span>title</span></h2></a>
-                            # Fallback: Some might still have h2 with .a-link-normal
-                            try:
-                                link_elem = product.find_element(By.CSS_SELECTOR, "a.a-link-normal.s-line-clamp-4")
-                            except NoSuchElementException:
-                                # fallback
-                                link_elem = product.find_element(By.CSS_SELECTOR, "h2 a.a-link-normal")
+                            # Extract title and link
+                            title_elem = product.select_one("a.a-link-normal.s-line-clamp-4")
+                            if not title_elem:
+                                title_elem = product.select_one("h2 a.a-link-normal")
+                            title = title_elem.text.strip()
+                            link = f"https://www.amazon.sa{title_elem['href']}"
 
-                            title = link_elem.text.strip()
-                            link = link_elem.get_attribute("href")
+                            # Extract price
+                            price = "N/A"
+                            price_elem = product.select_one("span.a-price span.a-offscreen")
+                            if price_elem:
+                                raw_price = price_elem.text.strip()
+                                price = self.normalize_price(raw_price)
 
-                            # --- Price ---
-                            # Attempt the older approach first
-                            raw_price = "N/A"
-                            try:
-                                price_whole = product.find_element(By.CSS_SELECTOR, "span.a-price-whole").text
-                                price_fraction = product.find_element(By.CSS_SELECTOR, "span.a-price-fraction").text
-                                raw_price = f"{price_whole}.{price_fraction}"
-                            except NoSuchElementException:
-                                # Fallback: look for the 'span.a-offscreen' (the entire price in one element)
-                                try:
-                                    offscreen = product.find_element(By.CSS_SELECTOR, "span.a-price span.a-offscreen")
-                                    raw_price = offscreen.text  # e.g. "SAR 1,769.99"
-                                except NoSuchElementException:
-                                    pass
+                            # Extract image URL
+                            image_elem = product.select_one("img.s-image")
+                            image_url = image_elem["src"] if image_elem else ""
 
-                            price = self.normalize_price(raw_price)
-
-                            # --- Image URL ---
-                            # Usually: <img class="s-image" ...>
-                            try:
-                                image_elem = product.find_element(By.CSS_SELECTOR, "img.s-image")
-                                image_url = image_elem.get_attribute("src")
-                            except NoSuchElementException:
-                                image_url = ""
-
+                            # Add unique product
                             product_key = (title, link)
                             if product_key not in unique_products and title:
                                 unique_products.add(product_key)
@@ -315,12 +272,12 @@ class AmazonScraper(StoreScraper):
                                     "info": "N/A",
                                     "image_url": image_url
                                 }
-                        except (NoSuchElementException, WebDriverException):
-                            continue
+                        except AttributeError as e:
+                            print(f"Failed to extract some product details: {e}. Skipping...")
 
                 yield from extract_products()
 
-                # Attempt pagination
+                # Check for 'Next' button to paginate
                 try:
                     next_button = self.driver.find_element(By.CSS_SELECTOR, "a.s-pagination-next")
                     if not next_button.is_enabled():
@@ -378,44 +335,56 @@ class AmazonScraper(StoreScraper):
             return False
 
 
-
 class ExtraScraper(StoreScraper):
     def scrape_products(self, search_value, max_pages=5):
-        """
-        Scrape products from the Extra store using the correct URL format.
-        """
-        # Correct URL format provided manually
-        base_url = f"https://www.extra.com/en-sa/search/?q={search_value}%3Arelevance%3Atype%3APRODUCT&text={search_value}&pageSize=96&sort=relevance"
+        """Scrape products from Extra for a given search value."""
+        base_url = f"https://www.extra.com/en-sa/search/?q={urllib.parse.quote(search_value)}%3Arelevance%3Atype%3APRODUCT&text={urllib.parse.quote(search_value)}&pageSize=96&sort=relevance"
 
         unique_products = set()
 
         try:
             for page in range(1, max_pages + 1):
-                # Construct the URL for each page using the correct format
                 url = f"{base_url}&pg={page}"
                 print(f"Loading page {page} for Extra - URL: {url}")
                 self.driver.get(url)
 
-                # Wait for the product tiles to load
-                WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "product-tile-wrapper"))
-                )
-                print(f"Scraping results from {self.store_name} - Page {page} for: {search_value}")
+                # Wait for product tiles to load
+                try:
+                    WebDriverWait(self.driver, 20).until(
+                        EC.presence_of_all_elements_located((By.CLASS_NAME, "product-tile-wrapper"))
+                    )
+                except TimeoutException:
+                    print(f"No products found on page {page}. Stopping pagination.")
+                    break
 
-                # Extract products on the current page
+                print(f"Scraping results from Extra - Page {page} for: {search_value}")
+
                 def extract_products():
-                    product_elements = self.driver.find_elements(By.CLASS_NAME, "product-tile-wrapper")
+                    """Extract product details using BeautifulSoup."""
+                    page_source = self.driver.page_source
+                    soup = BeautifulSoup(page_source, "html.parser")
+                    product_elements = soup.select("section.product-tile-wrapper")
+
                     for product in product_elements:
                         try:
                             # Extract product details
-                            title = product.find_element(By.CLASS_NAME, "product-name-data").text
-                            link = product.find_element(By.CSS_SELECTOR, "a").get_attribute("href")
-                            raw_price = product.find_element(By.CLASS_NAME, "price").text.replace("SAR", "").strip()
-                            price = self.normalize_price(raw_price)
-                            info = "; ".join([li.text for li in product.find_elements(By.CSS_SELECTOR, "ul.product-stats li")])
-                            raw_image_url = product.find_element(By.CSS_SELECTOR, "picture img").get_attribute("src")
-                            image_url = self.clean_image_url(raw_image_url)  # Clean the image URL
+                            title_elem = product.select_one("span.product-name-data")
+                            title = title_elem.get_text(strip=True) if title_elem else "No title"
 
+                            link_elem = product.select_one("a.product-tile-content-wrapper")
+                            link = f"https://www.extra.com{link_elem['href']}" if link_elem else "No link"
+
+                            price_elem = product.select_one("section.price strong")
+                            raw_price = price_elem.get_text(strip=True) if price_elem else "N/A"
+                            price = self.normalize_price(raw_price)
+
+                            stats = product.select("ul.product-stats li")
+                            info = "; ".join([li.get_text(strip=True) for li in stats]) if stats else "No additional info available"
+
+                            image_elem = product.select_one("picture img")
+                            image_url = image_elem["src"] if image_elem else ""
+
+                            # Deduplicate products
                             product_key = (title, link)
                             if product_key not in unique_products:
                                 unique_products.add(product_key)
@@ -425,27 +394,31 @@ class ExtraScraper(StoreScraper):
                                     "link": link,
                                     "price": price,
                                     "info": info,
-                                    "image_url": image_url
+                                    "image_url": self.clean_image_url(image_url),
                                 }
-                        except (NoSuchElementException, WebDriverException):
-                            continue
+                        except AttributeError as e:
+                            print(f"Failed to extract some product details: {e}. Skipping...")
 
                 yield from extract_products()
 
-                # Check if the current page is the last page
-                pagination_element = self.driver.find_elements(By.CLASS_NAME, "pagination-wrapper")
-                if pagination_element:
-                    next_button = self.driver.find_elements(By.CSS_SELECTOR, "li.next")
-                    if not next_button or 'hidden' in next_button[0].get_attribute('class'):
+                # Check for the "Next" button and click it
+                try:
+                    next_button = self.driver.find_element(By.CSS_SELECTOR, "li.next > div.icon-inline")
+                    if next_button.is_displayed() and "hidden" not in next_button.get_attribute("class"):
+                        next_button.click()
+                        WebDriverWait(self.driver, 10).until(
+                            EC.staleness_of(next_button)
+                        )  # Wait for the page to refresh
+                    else:
                         print("No more pages to load. Stopping pagination.")
                         break
-                else:
-                    print("No pagination found. Assuming this is the only page.")
+                except NoSuchElementException:
+                    print("No 'Next' button found. Assuming this is the last page.")
                     break
 
         except (TimeoutException, WebDriverException) as e:
             print(f"Error during scraping: {e}")
-    
+
     def scrape_arabic(self, url):
         self.driver.get(url)
         try:
@@ -488,4 +461,3 @@ class ExtraScraper(StoreScraper):
         except Exception as e:
             print(f"[Extra] Error checking availability for {product_link}: {e}")
             return False
-
