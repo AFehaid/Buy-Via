@@ -58,7 +58,7 @@ body {
     margin-bottom: 12px;
 }
 .filters-header {
-    display: none; /* Hidden by default */
+    display: none; 
     justify-content: space-between;
     align-items: center;
     padding: 10px;
@@ -171,17 +171,7 @@ body {
     border-top: 1px solid #f0f0f0;
 }
 
-.price-availability {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
 
-.product-price.available {
-    color: #2ecc71;
-    font-weight: bold;
-    font-size: 16px;
-}
 
 .product-price.unavailable {
     color: #e74c3c;
@@ -326,9 +316,43 @@ body {
     background-color: #007bff;
     color: white;
 }
+.price-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
 
+.old-price {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 14px;
+}
 
-/* Responsive Design */
+.discount-badge {
+    background-color: #e74c3c;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 2px;
+}
+
+/* Update existing price classes */
+.product-price.available {
+    color: #2ecc71;
+    font-weight: bold;
+    font-size: 16px;
+    margin: 0;
+}
+
+.price-availability {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 @media (max-width: 1200px) {
     .product-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -390,7 +414,6 @@ body {
         height: 20px;
     }
 }
-/* Mobile Styles */
 @media (max-width: 768px) {
     .search-container {
         flex-direction: column;
@@ -402,10 +425,10 @@ body {
     }
 
     .filters-header {
-        display: flex; /* Show the filters header on mobile */
+        display: flex; 
     }
 
     .filters-sidebar.collapsed {
-        display: none; /* Hide filters when collapsed */
+        display: none; 
     }
 }

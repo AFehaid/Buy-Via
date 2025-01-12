@@ -143,9 +143,7 @@ const Navbar = () => {
             setIsSearchOpen(false);
         }
     };
-    const handleHomeClick = () => {
-        navigate('/'); 
-      };
+
 
 
       const categories = [

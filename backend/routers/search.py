@@ -247,7 +247,7 @@ router = APIRouter(prefix="/search", tags=["search"])
 @router.get("/recommendations", response_model=List[ProductResponse])
 def get_user_recommendations(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # Use the updated dependency
 ):
     """
     Fetch and return recommended products for the logged-in user, sorted by priority.

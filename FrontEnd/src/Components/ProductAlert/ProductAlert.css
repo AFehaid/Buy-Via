@@ -1,0 +1,164 @@
+.item-image-container {
+    position: relative !important;
+    display: block !important;
+    width: 100%;
+  }
+  
+  .product-alert-container {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+  }
+  
+  .product-alert-button {
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 50%;
+    padding: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  /* Desktop - hide by default and show on hover */
+  @media (min-width: 768px) {
+    .product-alert-button {
+      opacity: 0;
+    }
+    
+    .item-image-container:hover .product-alert-button {
+      opacity: 1;
+    }
+  }
+  
+  /* Mobile - always show */
+  @media (max-width: 767px) {
+    .product-alert-button {
+      opacity: 1;
+    }
+  }
+  
+  .product-alert-button:hover {
+    background-color: rgba(255, 255, 255, 1);
+    transform: scale(1.05);
+  }
+  
+  .alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  
+  .alert-popup {
+    background-color: white;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: popupFadeIn 0.2s ease;
+  }
+  
+  @keyframes popupFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .alert-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 16px;
+    text-align: center;
+    color: #1f2937;
+  }
+  
+  .alert-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .form-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+  }
+  
+  .form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+  }
+  
+  .form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  }
+  
+  .button-container {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  
+  .submit-button,
+  .cancel-button {
+    flex: 1;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
+    font-weight: 500;
+  }
+  
+  .submit-button {
+    background-color: #3b82f6;
+  }
+  
+  .submit-button:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+  }
+  
+  .submit-button:active {
+    transform: translateY(0);
+  }
+  
+  .cancel-button {
+    background-color: #6b7280;
+  }
+  
+  .cancel-button:hover {
+    background-color: #4b5563;
+    transform: translateY(-1px);
+  }
+  
+  .cancel-button:active {
+    transform: translateY(0);
+  }

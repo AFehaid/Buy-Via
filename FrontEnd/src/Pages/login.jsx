@@ -8,7 +8,7 @@ import "../Pages/login.css";
 const AuthModal = ({ mode, onClose }) => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [activeForm, setActiveForm] = useState(mode); // Set initial form based on mode
+  const [activeForm, setActiveForm] = useState(mode); 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -35,9 +35,9 @@ const AuthModal = ({ mode, onClose }) => {
     try {
       if (activeForm === "signIn") {
         await login(formData.username, formData.password);
+        console.log("Login successful! Token stored in localStorage.");
         setSuccess("Logged in successfully!");
         onClose();
-        navigate("/");
       } else if (activeForm === "signUp") {
         if (formData.password !== formData.confirmPassword) {
           setError("Passwords do not match.");
@@ -51,11 +51,13 @@ const AuthModal = ({ mode, onClose }) => {
         });
 
         if (response.status === 201) {
+          console.log("Registration successful!");
           setSuccess("Account created successfully! Please sign in.");
-          setActiveForm("signIn"); // Switch to sign-in form after successful signup
+          setActiveForm("signIn"); 
         }
       }
     } catch (err) {
+      console.error("Error during login/registration:", err);
       setError(err.response?.data?.detail || "An error occurred. Please try again.");
     }
   };
