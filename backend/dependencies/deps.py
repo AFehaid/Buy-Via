@@ -8,8 +8,12 @@ from jose import jwt, JWTError
 from dotenv import load_dotenv
 import os
 from models import SessionLocal
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 load_dotenv()
+
+security = HTTPBearer()
+
 
 SECRET_KEY = os.getenv("AUTH_SECRET_KEY")
 ALGORITHM = os.getenv("AUTH_ALGORITHM")
@@ -46,14 +50,14 @@ async def get_optional_current_user(token: str = Depends(oauth2_bearer_optional)
     return None
 
 # Authentication Dependency
-async def get_current_user(request: Request):
-    token = request.cookies.get("access_token")
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Retrieve the current user from the Authorization header.
+    """
+    token = credentials.credentials
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     try:
-        # Remove "Bearer " prefix if present
-        if token.startswith("Bearer "):
-            token = token[7:]
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         user_id: int = payload.get("id")

@@ -1,81 +1,46 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./HorizontalScrollView.css";
+import './HorizontalScrollView.css'
 import Jarir from "../../assets/Jarir.png";
 import Extra from "../../assets/Extra.png";
 import AMZN from "../../assets/AMZN.png";
 import ProductAlert from "../ProductAlert/ProductAlert";
 
-const requestQueue = [];
-let isProcessing = false;
-
-const processQueue = async () => {
-  if (isProcessing || requestQueue.length === 0) return;
-  
-  isProcessing = true;
-  const nextRequest = requestQueue[0];
-  
-  try {
-    const response = await fetch(nextRequest.url);
-    const data = await response.json();
-    nextRequest.resolve(data);
-  } catch (error) {
-    nextRequest.reject(error);
-  } finally {
-    requestQueue.shift();
-    isProcessing = false;
-    processQueue();
-  }
-};
-
-const queueRequest = (url) => {
-  return new Promise((resolve, reject) => {
-    requestQueue.push({ url, resolve, reject });
-    processQueue();
-  });
-};
-
-const HorizontalScrollView = ({ prompt }) => {
+const RelatedProducts = ({ category }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [totalResults, setTotalResults] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchItems = async () => {
+    const fetchRelatedProducts = async () => {
       setLoading(true);
       setError(null);
       try {
-        const url = `http://localhost:8000/search?query=${encodeURIComponent(prompt)}&page=1&page_size=20&sort_by=relevance&min_price=1000&in_stock_only=true`;
-        
-        const data = await queueRequest(url);
-
-        if (data && data.products) {
-          setItems(data.products);
-          setTotalResults(data.total_count);
+        const url = `http://localhost:8000/search/related-products?category_id=${encodeURIComponent(category)}&limit=20`;
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log("Backend Response:", data);
+  
+        if (Array.isArray(data) && data.length > 0) {
+          setItems(data);
         } else {
           setItems([]);
-          setTotalResults(0);
+          setError("No related products found for this category.");
         }
       } catch (error) {
-        console.error('Error fetching search results:', error);
+        console.error('Error fetching related products:', error);
         setError(error.message);
         setItems([]);
-        setTotalResults(0);
       } finally {
         setLoading(false);
       }
     };
-
-    if (prompt) {
-      fetchItems();
+  
+    if (category) {
+      fetchRelatedProducts();
     }
-  }, [prompt]);
-
-  const handleShowMore = () => {
-    navigate(`/search?query=${encodeURIComponent(prompt)}`);
-  };
+  }, [category]);
 
   const handleViewProduct = (productId) => {
     navigate(`/product/${productId}`);
@@ -97,7 +62,7 @@ const HorizontalScrollView = ({ prompt }) => {
   };
 
   const formatPrice = (item) => {
-    if (item.price === null) {
+    if (!item.price) {
       return <span className="available">Price not available</span>;
     }
 
@@ -121,41 +86,32 @@ const HorizontalScrollView = ({ prompt }) => {
   if (error) {
     return (
       <div className="error-container">
-        <p className="error-message">Failed to load products. Please try again later.</p>
+        <p className="error-message">Failed to load related products. Please try again later.</p>
       </div>
     );
   }
 
   return (
     <div className="horizontal-scroll-view">
-      <button className="button5" onClick={handleShowMore}>
-        <span className="actual-text">
-          &nbsp;{prompt.split(' ').map((word, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <b>&nbsp;</b>}{word}
-            </React.Fragment>
-          ))}&nbsp;
-        </span>
-      </button>
-
+      <h2 className="related-products-title">Related Products</h2>
       {loading ? (
         <div className="loading-container1">
           <div className="loading-spinner1">
             <div className="spinner-ring"></div>
-            <p>Loading products...</p>
+            <p>Loading related products...</p>
           </div>
         </div>
       ) : items.length > 0 ? (
         <div className="scroll-container">
           {items.map((item) => (
             <div 
-              key={item.product_id} 
+              key={item.product_id}
               className="item-card" 
               onClick={() => handleViewProduct(item.product_id)}
             >
               <div className="item-image-container">
                 <img src={item.image_url} alt={item.title} loading="lazy" />
-                <ProductAlert />
+                <ProductAlert/>
               </div>
               <h3>{item.title}</h3>
               <div className="item-footer">
@@ -175,11 +131,11 @@ const HorizontalScrollView = ({ prompt }) => {
         </div>
       ) : (
         <div className="no-results">
-          <p>No products found for "{prompt}"</p>
+          <p>No related products found.</p>
         </div>
       )}
     </div>
   );
 };
 
-export default HorizontalScrollView;
+export default RelatedProducts;

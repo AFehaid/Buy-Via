@@ -19,7 +19,14 @@ html, body {
 .loading-spinner1 {
   text-align: center;
 }
-
+.related-products-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 20px 20px 10px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #007bff;
+}
 .spinner-ring {
   display: inline-block;
   width: 50px;
@@ -114,13 +121,16 @@ html, body {
 .item-footer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  margin-top: auto;
 }
 
 .price-container {
-  font-weight: 500;
-  font-size: 15px;
-  color: #2ecc71;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
 }
 
 .available {
@@ -132,6 +142,8 @@ html, body {
   height: 20px;
   width: auto;
   object-fit: contain;
+  margin-left: 8px;
+  flex-shrink: 0;
 }
 
 .error-container,
@@ -157,7 +169,44 @@ html, body {
   color: #007bff;
   transition: all 0.3s ease;
 }
+.price-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
 
+.price-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.current-price {
+  font-weight: 600;
+  font-size: 15px;
+  color: #2ecc71;
+  white-space: nowrap;
+}
+
+.old-price {
+  font-size: 12px;
+  color: #999;
+  text-decoration: line-through;
+  white-space: nowrap;
+}
+
+.discount-badge {
+  display: inline-block;
+  background-color: #e74c3c;
+  color: white;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: fit-content;
+}
 .actual-text,
 .hover-text5 {
   transition: all 0.3s ease;
@@ -170,7 +219,22 @@ html, body {
   .actual-text{
     font-size: 24px;
   }
-
+  .price-container {
+    gap: 2px;
+  }
+  
+  .current-price {
+    font-size: 14px;
+  }
+  
+  .old-price {
+    font-size: 11px;
+  }
+  
+  .discount-badge {
+    font-size: 10px;
+    padding: 1px 3px;
+  }
   .button5 {
       margin: 0 20px 0;
       font-size: 1.2em;

@@ -9,7 +9,6 @@ import Home from './Pages/home';
 import Contact_us from './Pages/contact_us';
 import Login from './Pages/login';
 import SearchResults from './Pages/SearchResults';
-import Categories from './Pages/Categories';
 import Img_Slider from './Components/Img_Slider/Img_Slider'
 import Sign_up from "./Pages/sign_up";
 import AuthProvider from "./Components/Navbar/AuthProvider";
@@ -38,7 +37,6 @@ function App() {
       <Route path="Sign_Up" element={<Sign_up />}/>
 
         <Route path="Search" element={<SearchResults />} />
-        <Route path="Categories" element={<Categories />} />
         <Route path="/product/:productId" element={<ProductDetails />} />
 
       </Routes>

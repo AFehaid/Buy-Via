@@ -25,14 +25,14 @@ const AuthProvider = (props) => {
           },
         }
       );
-
+  
       if (response.status === 200) {
         const token = response.data.access_token;
         setToken(token);
-        localStorage.setItem("token", token);
+        localStorage.setItem("token", token); // Store token in localStorage
         setIsLoggedIn(true);
-
-        setLogoutTimer(setTimeout(logout, 1800000)); 
+  
+        setLogoutTimer(setTimeout(logout, 1800000)); // Logout after 30 minutes
       }
     } catch (error) {
       console.error("Login failed:", error.response?.data || error.message);
@@ -42,10 +42,10 @@ const AuthProvider = (props) => {
 
   const logout = () => {
     setToken(null);
-    localStorage.removeItem("token");
+    localStorage.removeItem("token"); // Clear token from localStorage
     setIsLoggedIn(false);
     if (logoutTimer) {
-      clearTimeout(logoutTimer);
+      clearTimeout(logoutTimer); // Clear the logout timer
       setLogoutTimer(null);
     }
   };

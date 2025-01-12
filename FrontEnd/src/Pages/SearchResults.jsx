@@ -28,7 +28,7 @@ const SearchResults = () => {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
     const [expandedMainCategories, setExpandedMainCategories] = useState([]);
-    const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true); // Collapsed by default on mobile
+    const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true); 
     const observer = useRef();
     const lastProductRef = useRef();
     const pageSize = 10;
@@ -143,7 +143,7 @@ const SearchResults = () => {
     const categoryName = getCategoryName(categoryId);
     
     const toggleFilters = () => {
-        setIsFiltersCollapsed((prev) => !prev); // Toggle filters visibility on mobile
+        setIsFiltersCollapsed((prev) => !prev); 
     };
     const formatPriceLabel = (value) => {
         if (value >= 5000) {
@@ -159,19 +159,17 @@ const SearchResults = () => {
         setHasMore(true);
     }, [query, sortBy, selectedStore, priceRange[0], priceRange[1], categoryId]);
 
-    // Reset pagination when filters change
     useEffect(() => {
         setResults([]);
         setPage(1);
         setHasMore(true);
     }, [query, sortBy, selectedStore, priceRange[0], priceRange[1], selectedCategory]);
 
-    // Fetch results with debounced price range
     const fetchResults = useCallback(async () => {
         try {
             setLoading(true);
             let url;
-            const maxPrice = priceRange[1] === 5000 ? 50000 : priceRange[1]; // Use 10x value for max price
+            const maxPrice = priceRange[1] === 5000 ? 50000 : priceRange[1]; 
 
             if (categoryId === 'all') {
                 url = `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}`;
@@ -201,16 +199,14 @@ const SearchResults = () => {
         }
     }, [query, page, sortBy, selectedStore, priceRange[0], priceRange[1], categoryId, pageSize]);
 
-    // Fetch results when dependencies change
     useEffect(() => {
         const timer = setTimeout(() => {
             fetchResults();
-        }, 500); // Debounce time of 500ms
+        }, 500); 
 
         return () => clearTimeout(timer);
     }, [fetchResults]);
 
-    // Scroll to top handler
     useEffect(() => {
         const handleScroll = () => {
             setShowScrollTop(window.pageYOffset > 300);
@@ -220,12 +216,10 @@ const SearchResults = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Scroll to top on new search
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [location.search]);
 
-    // Intersection Observer setup for infinite scrolling
     useEffect(() => {
         if (!hasMore || loading) return;
 
@@ -255,32 +249,17 @@ const SearchResults = () => {
         };
     }, [hasMore, loading]);
 
-    const handleSortChange = (e) => {
-        setSortBy(e.target.value);
-    };
-
-    const handlePriceRangeChange = (event, newValue) => {
-        setPriceRange(newValue);
-    };
-
-    const handleStoreChange = (storeId) => {
-        setSelectedStore(storeId);
-    };
 
     const handleCategoryChange = (categoryId) => {
         setSelectedCategory(categoryId);
-        setPage(1); // Reset to the first page when a new category is selected
-    };
-
-    const toggleCategoriesSection = () => {
-        setIsCategoriesExpanded((prev) => !prev); // Toggle the entire Categories section
+        setPage(1);
     };
 
     const toggleMainCategory = (header) => {
         setExpandedMainCategories((prev) =>
             prev.includes(header)
-                ? prev.filter((h) => h !== header) // Collapse if already expanded
-                : [...prev, header] // Expand if collapsed
+                ? prev.filter((h) => h !== header) 
+                : [...prev, header] 
         );
     };
 
@@ -303,13 +282,11 @@ const SearchResults = () => {
 
     return (
         <div className="search-container">
-            {/* Filters Header (Mobile) */}
             <div className="filters-header" onClick={toggleFilters}>
                 <h3>Filters</h3>
                 <span className="dropdown-icon">{isFiltersCollapsed ? '+' : '−'}</span>
             </div>
 
-            {/* Filters Section */}
             <div className={`filters-sidebar ${isFiltersCollapsed ? 'collapsed' : ''}`}>
                 <div className="filter-section">
                     <h3>Sort By</h3>
@@ -402,7 +379,6 @@ const SearchResults = () => {
             </div>
 
             <div className="main-content">
-                {/* Conditional Header */}
                 {query ? (
                     <h1>Search Results for "{query}"</h1>
                 ) : categoryName ? (
@@ -415,55 +391,81 @@ const SearchResults = () => {
                 </p>
 
                 <div className="product-grid">
-                    {results.map((result, index) => {
-                        const isAvailable = result.availability && result.price !== null;
-                        const priceClasses = isAvailable 
-                            ? 'product-price available' 
-                            : result.price !== null 
-                                ? 'product-price unavailable' 
-                                : 'price-not-available';
-                        
-                        const productCard = (
-                            <div 
-                                key={result.product_id}
-                                className="product-card"
-                                onClick={() => handleProductClick(result.product_id)}
-                            >
-                                <div className="product-image-container">
-                                    <img 
-                                        src={result.image_url} 
-                                        alt={result.title}
-                                        className="product-image"
-                                    />
-                                </div>
-                                <h3 className="product-title">{result.title}</h3>
-                                <div className="product-info">
-                                    <div className="price-availability">
-                                        <p className={priceClasses}>
-                                            {result.price !== null 
-                                                ? `${result.price.toFixed(2)}${sar}` 
-                                                : "Price not available"}
-                                        </p>
-                                        {!isAvailable && result.price !== null && (
-                                            <span className="availability-status">Out of Stock</span>
-                                        )}
-                                    </div>
-                                    {result.store_id && (
-                                        <img 
-                                            src={getStoreIcon(result.store_id)} 
-                                            alt="Store" 
-                                            className="store-icon"
-                                        />
-                                    )}
-                                </div>
-                            </div>
-                        );
+                {results.map((result, index) => {
+    const isAvailable = result.availability && result.price !== null;
+    const priceClasses = isAvailable 
+        ? 'product-price available' 
+        : result.price !== null 
+            ? 'product-price unavailable' 
+            : 'price-not-available';
+    
+    const calculateDiscount = (currentPrice, oldPrice) => {
+        if (!currentPrice || !oldPrice || oldPrice <= currentPrice) return null;
+        const discount = ((oldPrice - currentPrice) / oldPrice) * 100;
+        return discount >= 4 ? discount : null;
+    };
 
-                        if (results.length === index + 1) {
-                            return <div ref={lastProductRef} key={result.product_id}>{productCard}</div>;
-                        }
-                        return productCard;
-                    })}
+    const discount = result.last_old_price 
+        ? calculateDiscount(result.price, result.last_old_price)
+        : null;
+    
+    const productCard = (
+        <div 
+            key={result.product_id}
+            className="product-card"
+            onClick={() => handleProductClick(result.product_id)}
+        >
+            <div className="product-image-container">
+                <img 
+                    src={result.image_url} 
+                    alt={result.title}
+                    className="product-image"
+                />
+            </div>
+            <h3 className="product-title">{result.title}</h3>
+            <div className="product-info">
+                <div className="price-availability">
+                    <div className="price-container">
+                        {result.price !== null ? (
+                            <>
+                                <p className={priceClasses}>
+                                    {result.price.toFixed(2)}{sar}
+                                </p>
+                                {discount && (
+                                    <>
+                                        <span className="old-price">
+                                            {result.last_old_price.toFixed(2)}{sar}
+                                        </span>
+                                        <span className="discount-badge">
+                                            {discount.toFixed(0)}% OFF
+                                        </span>
+                                    </>
+                                )}
+                            </>
+                        ) : (
+                            <p className="price-not-available">Price not available</p>
+                        )}
+                    </div>
+                    {!isAvailable && result.price !== null && (
+                        <span className="availability-status">Out of Stock</span>
+                    )}
+                </div>
+                {result.store_id && (
+                    <img 
+                        src={getStoreIcon(result.store_id)} 
+                        alt="Store" 
+                        className="store-icon"
+                    />
+                )}
+            </div>
+        </div>
+    );
+
+    if (results.length === index + 1) {
+        return <div ref={lastProductRef} key={result.product_id}>{productCard}</div>;
+    }
+    return productCard;
+})}
                 </div>
 
                 {loading && (
