@@ -50,7 +50,6 @@ class Product(Base):
     __tablename__ = "products"
     product_id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True, nullable=False)
-    title_in_arabic = Column(String, nullable=True)  # Empty for now
     price = Column(Float, nullable=True)
     info = Column(String, nullable=True) 
     search_value = Column(String, index=True)
@@ -65,7 +64,15 @@ class Product(Base):
     category = relationship("Category", back_populates="products")
     group = relationship("ProductGroup", back_populates="products")
     price_histories = relationship("ProductPriceHistory", back_populates="product", cascade="all, delete-orphan")
+    translations = relationship("ProductTitleTranslation", back_populates="product", cascade="all, delete-orphan")
 
+class ProductTitleTranslation(Base):
+    __tablename__ = "product_title_translations"
+    translation_id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.product_id", ondelete="CASCADE"))
+    language = Column(String, nullable=False)  # e.g., "en", "ar", "es"
+    translated_title = Column(String, nullable=False)
+    product = relationship("Product", back_populates="translations")
 
 class Store(Base):
     __tablename__ = "stores"
@@ -140,8 +147,6 @@ class UserRecommendation(Base):
     product_id = Column(Integer, ForeignKey("products.product_id", ondelete="CASCADE"))
     recommendation_date = Column(DateTime, default=datetime.now(timezone.utc))
     priority_score = Column(Float, nullable=False)
-
-    # Relationships
     user = relationship("User", back_populates="recommendations")
     product = relationship("Product")  # No back_populates needed here
 
