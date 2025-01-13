@@ -47,6 +47,7 @@ class ScraperManager:
         link = data["link"]
         image_url = data["image_url"]
 
+        # Ensure the store exists in the database
         store = db.query(Store).filter_by(store_name=store_name).first()
         if not store:
             store = Store(store_name=store_name)
@@ -54,14 +55,10 @@ class ScraperManager:
             db.commit()
             db.refresh(store)
 
-        category_name = "General"
-        category = db.query(Category).filter_by(category_name=category_name).first()
-        if not category:
-            category = Category(category_name=category_name)
-            db.add(category)
-            db.commit()
-            db.refresh(category)
+        # Use the fallback category with ID 54
+        fallback_category_id = 54
 
+        # Check if the product already exists
         existing_product = db.query(Product).filter_by(
             title=title, store_id=store.store_id
         ).first()
@@ -106,6 +103,7 @@ class ScraperManager:
             else:
                 print(f"[{search_value}][{current_index}/{total_values}][{store_name}][Product ID: {existing_product.product_id}] {title}: No changes.")
         else:
+            # Add new product with fallback category ID 54
             new_product = Product(
                 title=title,
                 price=price,
@@ -115,11 +113,12 @@ class ScraperManager:
                 image_url=image_url,
                 availability=True,
                 store_id=store.store_id,
-                category_id=category.category_id,
+                category_id=fallback_category_id,  # Assign fallback category ID 54
             )
             db.add(new_product)
             db.commit()
             print(f"[{search_value}][{current_index}/{total_values}][{store_name}][Product ID: {new_product.product_id}] {title}: Added to database.")
+
 
     def run_scraper_for_value(self, scraper, search_value, current_index, total_values):
         """Run a single scraper for a given search value."""

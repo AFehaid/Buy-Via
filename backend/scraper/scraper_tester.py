@@ -1,5 +1,5 @@
 # scraper_tester.py
-from scraper import ExtraScraper, AmazonScraper, JarirScraper
+from scraper.scraper import AmazonScraper, JarirScraper, ExtraScraper
 
 class ScraperManager:
     def __init__(self):

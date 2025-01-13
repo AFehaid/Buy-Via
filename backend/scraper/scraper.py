@@ -96,14 +96,14 @@ class JarirScraper(StoreScraper):
     def scrape_products(self, search_value, max_scrolls=5):
         """Scrape products from the Jarir website."""
         encoded_search_value = urllib.parse.quote(search_value)
-        url = f"https://www.jarir.com/sa-en/catalogsearch/result?search={encoded_search_value}"
+        url = f"https://www.jarir.com/sa-en/catalogsearch/result?search={encoded_search_value}&country=sa"
 
         try:
             self.driver.get(url)
             self.handle_popups()
 
             WebDriverWait(self.driver, 20).until(
-                EC.presence_of_element_located((By.CLASS_NAME, "product-tile"))
+                EC.presence_of_element_located((By.CLASS_NAME, "product-tile__item--spacer"))
             )
             print(f"Scraping results from {self.store_name} for: {search_value}")
 
@@ -113,25 +113,37 @@ class JarirScraper(StoreScraper):
                 """Extract product details using BeautifulSoup."""
                 page_source = self.driver.page_source
                 soup = BeautifulSoup(page_source, "html.parser")
-                product_elements = soup.find_all("div", class_="product-tile")
+                product_elements = soup.find_all("div", class_="product-tile__item--spacer")
 
                 if not product_elements:
                     print("No product tiles found. The page structure might have changed.")
 
                 for product in product_elements:
                     try:
-                        title_elem = product.find("div", class_="product-title__title")
+                        # Extract title and link
+                        title_elem = product.find("p", class_="product-title__title")
                         link_elem = product.find("a", class_="product-tile__link")
-                        price_elem = product.find("div", class_="price")
-                        info_elem = product.find("div", class_="product-title__info")
-                        image_elem = product.find("img", class_="image--contain")
 
-                        title = title_elem.get_text(strip=True) if title_elem else "No title"
-                        link = link_elem["href"] if link_elem else "No link"
+                        # Extract price
+                        price_elem = product.find("div", class_="price")
                         raw_price = price_elem.get_text(strip=True) if price_elem else "N/A"
                         price = self.normalize_price(raw_price)
-                        info = info_elem.get_text(strip=True) if info_elem else "No additional info available"
-                        image_url = image_elem["src"] if image_elem else ""
+
+                        # Extract info
+                        info_elem = product.find("p", class_="product-title__info")
+                        info = (
+                            info_elem.get_text(" | ", strip=True)
+                            if info_elem
+                            else "No additional info available"
+                        )
+
+                        # Extract image (focus on `loading="eager"` to get the correct image)
+                        image_elem = product.find("img", {"loading": "eager", "class": "image--contain"})
+                        image_url = self.clean_image_url(image_elem["src"]) if image_elem else ""
+
+                        # Format the product link
+                        title = title_elem.get_text(strip=True) if title_elem else "No title"
+                        link = f"https://www.jarir.com{link_elem['href']}" if link_elem else "No link"
 
                         product_key = (title, link)
                         if product_key not in unique_products:
@@ -142,7 +154,7 @@ class JarirScraper(StoreScraper):
                                 "link": link,
                                 "price": price,
                                 "info": info,
-                                "image_url": image_url
+                                "image_url": image_url,
                             }
                     except AttributeError as e:
                         print(f"Error extracting product details: {e}. Skipping product...")
@@ -163,6 +175,7 @@ class JarirScraper(StoreScraper):
 
         except (TimeoutException, WebDriverException) as e:
             print(f"Error during scraping: {e}")
+
 
     def scrape_arabic(self, url):
         self.driver.get(url)
