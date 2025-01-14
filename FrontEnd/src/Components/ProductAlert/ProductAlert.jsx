@@ -2,6 +2,11 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom";
 import "./ProductAlert.css";
 import { FaBell } from 'react-icons/fa';
+import { useAuth } from '../Navbar/AuthProvider'; 
+import AuthModal from '../../Pages/login'
+import Sign_up from "../../Pages/sign_up";
+
+
 const AlertPopup = ({ onClose, onSubmit, thresholdPrice, setThresholdPrice }) => {
   const popupRef = useRef(null);
 
@@ -66,11 +71,26 @@ const ProductAlert = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [thresholdPrice, setThresholdPrice] = useState("");
   const containerRef = useRef(null);
+  const { isLoggedIn } = useAuth(); 
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const handleAlertClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    if (!isLoggedIn) {
+      setShowLoginModal(true);
+      return;
+    }
     setShowPopup(true);
+  };
+
+  const handleModalClose = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setShowLoginModal(false);
   };
 
   const handleSubmit = () => {
@@ -80,24 +100,44 @@ const ProductAlert = () => {
   };
 
   return (
-    <div ref={containerRef} className="product-alert-container">
-      <button
-        className="product-alert-button"
-        onClick={handleAlertClick}
-      >
-        <FaBell size={20} color="#3b82f6" />
+    <>
+      <div ref={containerRef} className="product-alert-container">
+        <button
+          className="product-alert-button"
+          onClick={handleAlertClick}
+        >
+          <FaBell size={20} color="#3b82f6" />
+        </button>
+        
+        {showPopup && isLoggedIn && (
+          <AlertPopup
+            onClose={() => setShowPopup(false)}
+            onSubmit={handleSubmit}
+            thresholdPrice={thresholdPrice}
+            setThresholdPrice={setThresholdPrice}
+          />
+        )}
+      </div>
 
-      </button>
-      
-      {showPopup && (
-        <AlertPopup
-          onClose={() => setShowPopup(false)}
-          onSubmit={handleSubmit}
-          thresholdPrice={thresholdPrice}
-          setThresholdPrice={setThresholdPrice}
-        />
+      {showLoginModal && ReactDOM.createPortal(
+        <div 
+          className="modal-overlay" 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleModalClose();
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <AuthModal 
+              mode="signIn" 
+              onClose={handleModalClose} 
+            />
+          </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 };
 

@@ -7,6 +7,34 @@ import { useAuth } from './AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import { FiChevronDown } from 'react-icons/fi';
 import AuthModal from '../../Pages/login'; // Renamed from Login.jsx
+import { 
+    // Main category icons
+    Smartphone,
+    Laptop,
+    Tv,
+    Gamepad,
+    Shirt,
+    Dumbbell,
+    Package,
+    Home,
+    Baby,
+    Car,
+    // Navigation and UI icons
+    UserCircle,
+    Bell,
+    ChevronDown,
+    Camera,
+    Music,
+    Gift,
+    ShoppingBag,
+    Headphones,
+    Watch,
+    Truck,
+    BookOpen,
+    Palette,
+    DumbbellIcon,
+    Warehouse
+} from 'lucide-react';
 
 const Navbar = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -23,7 +51,6 @@ const Navbar = () => {
 
 
     const handleCategoryClick = (categoryId) => {
-        // Redirect to the search results page with the category_id
         navigate(`/search?category_id=${categoryId}`);
         setIsMenuOpen(false);
     };
@@ -146,10 +173,10 @@ const Navbar = () => {
 
 
 
-      const categories = [
+   const categories = [
         {
             header: 'Computers',
-            icon: '💻',
+            icon: Laptop,
             subcategories: [
                 { id: 1, name: 'Desktops & Workstations' },
                 { id: 2, name: 'Laptops & Notebooks' },
@@ -163,7 +190,7 @@ const Navbar = () => {
         },
         {
             header: 'Smartphones',
-            icon: '📱',
+            icon: Smartphone,
             subcategories: [
                 { id: 4, name: 'Smartphones' },
                 { id: 13, name: 'Phone Accessories' },
@@ -172,7 +199,7 @@ const Navbar = () => {
         },
         {
             header: 'Home & Kitchen',
-            icon: '🏠',
+            icon: Home,
             subcategories: [
                 { id: 23, name: 'Home Appliances' },
                 { id: 24, name: 'Kitchen Appliances' },
@@ -183,7 +210,7 @@ const Navbar = () => {
         },
         {
             header: 'Entertainment',
-            icon: '🎮',
+            icon: Gamepad,
             subcategories: [
                 { id: 19, name: 'Gaming Consoles' },
                 { id: 20, name: 'Handheld Gaming Devices' },
@@ -195,7 +222,7 @@ const Navbar = () => {
         },
         {
             header: 'Fashion',
-            icon: '👗',
+            icon: Shirt,
             subcategories: [
                 { id: 28, name: 'Clothing' },
                 { id: 29, name: 'Shoes' },
@@ -208,7 +235,7 @@ const Navbar = () => {
         },
         {
             header: 'Sports',
-            icon: '🏀',
+            icon: Dumbbell,
             subcategories: [
                 { id: 35, name: 'Sports Equipment' },
                 { id: 36, name: 'Outdoor Gear' },
@@ -217,7 +244,7 @@ const Navbar = () => {
         },
         {
             header: 'Other Categories',
-            icon: '📦',
+            icon: Package,
             subcategories: [
                 { id: 15, name: 'Cameras & Camcorders' },
                 { id: 16, name: 'Camera Accessories' },
@@ -250,7 +277,7 @@ const Navbar = () => {
                         aria-expanded={isMenuOpen}
                     >
                         <span>Categories</span>
-                        <FiChevronDown className={`chevron-icon ${isMenuOpen ? 'rotate' : ''}`} />
+                        <ChevronDown className={`chevron-icon ${isMenuOpen ? 'rotate' : ''}`} />
                     </button>
                 </div>
 
@@ -276,39 +303,39 @@ const Navbar = () => {
                         </form>
                     </div>
                     {isLoggedIn ? (
-
-                    <Dropdown className='dropdown' drop='down-centered'>
-                        <Dropdown.Toggle as="button" className="alerts-btn">
-                            <FaBell size={30} color="#fff" />
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu className='dropdown-menu'>
-                            {alerts.length > 0 ? (
-                                alerts.map(alert => (
-                                    <Dropdown.Item
-                                        key={alert.alert_id}
-                                        className='dropdown-items'
-                                        onClick={() => handleProductClick(alert.product_id)} // Navigate to product page
-                                    >
-                                        <div className="alert-item">
-                                            <img src={alert.product_picture} alt={alert.product_name} className="alert-product-image" />
-                                            <div className="alert-product-details">
-                                                <div className="alert-product-name">{alert.product_name}</div>
-                                                <div className="alert-product-price">${alert.product_price}</div>
-                                                <div className="alert-threshold-price">Alert at: ${alert.threshold_price}</div>
+                        <Dropdown className='dropdown' drop='down-centered'>
+                            <Dropdown.Toggle as="button" className="alerts-btn">
+                                <Bell size={30} color='white'/>
+                            </Dropdown.Toggle>
+                            <Dropdown.Menu className='dropdown-menu'>
+                                {alerts.length > 0 ? (
+                                    alerts.map(alert => (
+                                        <Dropdown.Item
+                                            key={alert.alert_id}
+                                            className='dropdown-items'
+                                            onClick={() => handleProductClick(alert.product_id)}
+                                        >
+                                            <div className="alert-item">
+                                                <img src={alert.product_picture} alt={alert.product_name} className="alert-product-image" />
+                                                <div className="alert-product-details">
+                                                    <div className="alert-product-name">{alert.product_name}</div>
+                                                    <div className="alert-product-price">${alert.product_price}</div>
+                                                    <div className="alert-threshold-price">Alert at: ${alert.threshold_price}</div>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </Dropdown.Item>
+                                    ))
+                                ) : (
+                                    <Dropdown.Item className='dropdown-items'>
+                                        No alerts
                                     </Dropdown.Item>
-                                ))
-                            ) : (
-                                <Dropdown.Item className='dropdown-items'>
-                                    No alerts
-                                </Dropdown.Item>
-                            )}
-                        </Dropdown.Menu>
-                    </Dropdown>) :(<></>) }
+                                )}
+                            </Dropdown.Menu>
+                        </Dropdown>
+                    ) : null}
                     <Dropdown className='dropdown' drop='down-centered'>
                         <Dropdown.Toggle as="button" className="account-btn">
-                            <FaUserCircle size={30} color="#fff" />
+                            <UserCircle size={30} color='white' />
                         </Dropdown.Toggle>
                         <Dropdown.Menu className='dropdown-menu'>
                             {isLoggedIn ? (
@@ -331,9 +358,6 @@ const Navbar = () => {
                             )}
                         </Dropdown.Menu>
                     </Dropdown>
-
-                    {showLoginModal && <AuthModal mode="signIn" onClose={() => setShowLoginModal(false)} />}
-                    {showSignUpModal && <AuthModal mode="signUp" onClose={() => setShowSignUpModal(false)} />}
                 </div>
             </div>
 
@@ -343,7 +367,7 @@ const Navbar = () => {
                         <div key={index} className="category-section">
                             <div className="category-header">
                                 <h3>{category.header}</h3>
-                                <span className="category-icon">{category.icon}</span>
+                                <category.icon size={24} className="category-icon" />
                             </div>
                             <div className="subcategories-grid">
                                 {category.subcategories.map((subcat, subIndex) => (
@@ -360,6 +384,9 @@ const Navbar = () => {
                     ))}
                 </div>
             </div>
+
+            {showLoginModal && <AuthModal mode="signIn" onClose={() => setShowLoginModal(false)} />}
+            {showSignUpModal && <AuthModal mode="signUp" onClose={() => setShowSignUpModal(false)} />}
         </nav>
     );
 };
