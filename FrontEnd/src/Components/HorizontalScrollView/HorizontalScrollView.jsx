@@ -41,6 +41,7 @@ const HorizontalScrollView = ({ prompt }) => {
   const [error, setError] = useState(null);
   const [totalResults, setTotalResults] = useState(0);
   const navigate = useNavigate();
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -128,16 +129,20 @@ const HorizontalScrollView = ({ prompt }) => {
 
   return (
     <div className="horizontal-scroll-view">
-      <button className="button5" onClick={handleShowMore}>
-        <span className="actual-text">
-          &nbsp;{prompt.split(' ').map((word, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <b>&nbsp;</b>}{word}
-            </React.Fragment>
-          ))}&nbsp;
-        </span>
-      </button>
-
+      <div 
+        className="prompt-container"
+        onClick={handleShowMore}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <h2 className={`prompt-text original ${isHovered ? 'hide' : 'show'}`}>
+          {prompt}
+        </h2>
+        <h2 className={`prompt-text hover ${isHovered ? 'show' : 'hide'}`}>
+          Show More
+        </h2>
+      </div>
+      
       {loading ? (
         <div className="loading-container1">
           <div className="loading-spinner1">
