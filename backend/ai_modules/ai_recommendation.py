@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func, or_
+from sqlalchemy.sql import func, or_, text
 from models import User, SearchHistory, Product, UserRecommendation, ProductMatch
 from datetime import datetime, timezone
 
@@ -34,7 +34,7 @@ def generate_user_recommendations(db: Session):
     users_with_recent_history = (
         db.query(User)
         .join(SearchHistory, User.user_id == SearchHistory.user_id)
-        .filter(SearchHistory.search_date > func.datetime('now', '-1 day'))  # Adjust time window if needed
+        .filter(SearchHistory.search_date > func.now() - text("INTERVAL '1 day'")) # Adjust time window if needed
         .distinct(User.user_id)
         .all()
     )
