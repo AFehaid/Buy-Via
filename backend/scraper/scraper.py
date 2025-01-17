@@ -11,7 +11,8 @@ import platform
 import os
 import stat
 import re
-
+from scrapy import Selector
+import requests
 
 class StoreScraper:
     def __init__(self, store_name):
@@ -191,40 +192,42 @@ class JarirScraper(StoreScraper):
 
     def scrape_availability(self, product_link):
         """
-        Check the availability of a product on the store's website.
+        Check the availability and price of a product on Jarir's website using BeautifulSoup.
         :param product_link: The URL of the product page.
-        :return: True if the product is available, False otherwise.
+        :return: A dictionary with 'availability' (bool) and 'price' (float or 'N/A').
         """
         try:
-            # Navigate to the product link
+            # Navigate to the product page
             self.driver.get(product_link)
 
-            try:
-                # Check for "Notify Me When It’s Available" button
-                notify_me_buttons = WebDriverWait(self.driver, 5).until(
-                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "button.button--primary.button--fluid.button--secondary"))
-                )
-            except TimeoutException:
-                notify_me_buttons = []
+            # Get the page source after loading the product page
+            page_source = self.driver.page_source
 
-            try:
-                # Check for "Add to Cart" button
-                add_to_cart_buttons = WebDriverWait(self.driver, 5).until(
-                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "button.button--add-to-cart.button--primary.button--fluid"))
-                )
-            except TimeoutException:
-                add_to_cart_buttons = []
+            # Parse the page source with BeautifulSoup
+            soup = BeautifulSoup(page_source, "html.parser")
 
-            # If neither button is present, return False
-            if not notify_me_buttons and not add_to_cart_buttons:
-                return False
+            # Check for availability
+            notify_me_buttons = soup.select("button.button--primary.button--fluid.button--secondary")
+            add_to_cart_buttons = soup.select("button.button--add-to-cart.button--primary.button--fluid")
 
-            # If at least one button is found, return True
-            return True
+            # Determine availability
+            availability = bool(add_to_cart_buttons or not notify_me_buttons)
+
+            # Extract the price
+            price_element = soup.select_one("div.price-box__row div.price span.price__currency + span")
+            price = "N/A"
+
+            if price_element:
+                raw_price = price_element.get_text(strip=True).replace(",", "")
+                price = self.normalize_price(raw_price)
+
+            # Return both availability and price
+            return {"availability": availability, "price": price}
 
         except Exception as e:
-            print(f"[{self.store_name}] Error checking availability for {product_link}: {e}")
-            return False
+            print(f"[{self.store_name}] Error checking availability and price for {product_link}: {e}")
+            return {"availability": False, "price": "N/A"}
+
 
 
 class AmazonScraper(StoreScraper):
@@ -317,35 +320,73 @@ class AmazonScraper(StoreScraper):
     
     def scrape_availability(self, product_link):
         """
-        Check the availability of a product on Amazon based on its link.
-        :param product_link: The URL of the product page.
-        :return: True if the product is available, False otherwise.
+        Check availability and price of a product on Amazon based on its link.
+        1) If not available -> skip price extraction and set price = "N/A".
+        2) If available -> do the normal 3-step approach to find a price.
         """
         try:
-            # Navigate to the product link
             self.driver.get(product_link)
+            soup = BeautifulSoup(self.driver.page_source, "html.parser")
 
-            # Use a shorter wait time for availability elements
-            try:
-                availability_element = WebDriverWait(self.driver, 5).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, ".a-size-medium.a-color-success"))
-                )
+            # =========== AVAILABILITY DETECTION ===========
+            availability = False
 
-                # Check text content using JavaScript for faster access
-                availability_text = self.driver.execute_script(
-                    "return arguments[0].textContent;", availability_element
-                ).strip()
+            # 1) If text "In Stock" appears in .a-size-medium.a-color-success
+            availability_elem = soup.select_one(".a-size-medium.a-color-success")
+            if availability_elem:
+                availability_text = availability_elem.get_text(strip=True)
+                if "in stock" in availability_text.lower():
+                    availability = True
 
-                # Return False if the element contains "Currently unavailable"
-                return "Currently unavailable" not in availability_text
+            # 2) If the #add-to-cart-button is present, also consider it available
+            add_to_cart_button = soup.select_one("#add-to-cart-button")
+            if add_to_cart_button:
+                availability = True
 
-            except TimeoutException:
-                # If the availability element is not found, assume available
-                return True
+            # 3) Check if "Currently unavailable" is present
+            #    If found, override availability to False
+            unavailable_element = soup.select_one("#availability span.a-declarative")
+            if unavailable_element:
+                unavailable_text = unavailable_element.get_text(strip=True)
+                if "currently unavailable" in unavailable_text.lower():
+                    availability = False
+
+            # =========== PRICE DETECTION ===========
+            if not availability:
+                # If the product is not available, forcibly skip price:
+                price = "N/A"
+            else:
+                price = "N/A"
+                # 1) apexPriceToPay .a-offscreen
+                apex_elem = soup.select_one("span.a-price.a-text-price.a-size-medium.apexPriceToPay span.a-offscreen")
+                if apex_elem:
+                    raw_price = apex_elem.get_text(strip=True)
+                    raw_price = raw_price.replace("SAR", "").replace("ر.س", "").strip()
+                    price = self.normalize_price(raw_price)
+                else:
+                    # 2) a-price-whole + a-price-fraction
+                    whole_elem = soup.select_one("span.a-price-whole")
+                    fraction_elem = soup.select_one("span.a-price-fraction")
+                    if whole_elem and fraction_elem:
+                        whole_str = whole_elem.get_text(strip=True).replace(",", "")
+                        frac_str = fraction_elem.get_text(strip=True)
+                        if whole_str.endswith("."):
+                            whole_str = whole_str[:-1]  # remove trailing dot
+                        combined_price = f"{whole_str}.{frac_str}"
+                        price = self.normalize_price(combined_price)
+                    else:
+                        # 3) fallback: .aok-offscreen
+                        fallback_elem = soup.select_one("div.a-section.aok-relative span.aok-offscreen")
+                        if fallback_elem:
+                            raw_price = fallback_elem.get_text(strip=True)
+                            raw_price = raw_price.replace("SAR", "").replace("ر.س", "").strip()
+                            price = self.normalize_price(raw_price)
+
+            return {"availability": availability, "price": price}
 
         except Exception as e:
-            print(f"[Amazon] Error checking availability for {product_link}: {e}")
-            return False
+            print(f"[Amazon] Error checking availability and price for {product_link}: {e}")
+            return {"availability": False, "price": "N/A"}
 
 
 class ExtraScraper(StoreScraper):
@@ -411,7 +452,6 @@ class ExtraScraper(StoreScraper):
                                 }
                         except AttributeError as e:
                             print(f"Failed to extract some product details: {e}. Skipping...")
-
                 yield from extract_products()
 
                 # Check for the "Next" button and click it
@@ -446,31 +486,38 @@ class ExtraScraper(StoreScraper):
     
     def scrape_availability(self, product_link):
         """
-        Check the availability of a product on Extra's website.
+        Check the availability and price of a product on Extra's website using BeautifulSoup.
         :param product_link: The URL of the product page.
-        :return: False if the product has "Unavailable" text in the specified element. True otherwise.
+        :return: A dictionary with 'availability' (bool) and 'price' (float or 'N/A').
         """
         try:
-            # Navigate to the product link
+            # Navigate to the product page
             self.driver.get(product_link)
 
-            try:
-                # Use WebDriverWait with a shorter timeout for the status element
-                product_status_element = WebDriverWait(self.driver, 5).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "div.product-status-text.svelte-agjy"))
-                )
+            # Get the page source after loading the product page
+            page_source = self.driver.page_source
 
-                # Check if the text content contains "Unavailable"
-                if "Unavailable" in product_status_element.text:
-                    return False  # Product is unavailable
+            # Parse the page source with BeautifulSoup
+            soup = BeautifulSoup(page_source, "html.parser")
 
-            except TimeoutException:
-                # If the element is not found within the timeout, assume the product is available
-                pass
+            # Locate the product availability status
+            product_status_element = soup.select_one("div.product-status-text.svelte-agjy")
+            availability = True  # Default to available
 
-            # If "Unavailable" is not found, return True (product is available)
-            return True
+            # Check if the status text indicates "Unavailable"
+            if product_status_element and "Unavailable" in product_status_element.get_text(strip=True):
+                availability = False  # Product is unavailable
+
+            # Locate the price element
+            price_element = soup.select_one("section.price span.price strong")
+            price = "N/A"
+            if price_element:
+                raw_price = price_element.get_text(strip=True)
+                price = self.normalize_price(raw_price)
+
+            # Return both availability and price
+            return {"availability": availability, "price": price}
 
         except Exception as e:
-            print(f"[Extra] Error checking availability for {product_link}: {e}")
-            return False
+            print(f"[Extra] Error checking availability and price for {product_link}: {e}")
+            return {"availability": False, "price": "N/A"}
