@@ -83,30 +83,28 @@ class SearchResponse(BaseModel):
 # ----------------------------------------
 def get_search_query(db: Session, query: str, sort_by: str):
     """
-    Build base search query with filters and sorting, 
-    incorporating a special field to push accessories to the bottom if needed.
+    Build the search query while carefully handling short tokens.
     """
-    # 1) Split the user query and convert to lowercase
-    words = query.lower().split()
+    words = query.lower().split()  # Split query into words
 
-    # 2) Is this an "accessory" query?
-    is_accessory_query = any(word in all_accessories for word in words)
-
-    # 3) Build standard full-text-ish conditions
     conditions = []
-    # a) Exact match in title => +3
+    # Full-query match
     conditions.append((Product.title.ilike(f"%{query}%"), 3.0))
-    # b) Partial matches in title => +2
+    
+    # Handle longer words normally
     for word in words:
-        conditions.append((Product.title.ilike(f"%{word}%"), 2.0))
-    # c) Matches in info => +1 / +0.5
-    conditions.append((Product.info.ilike(f"%{query}%"), 1.0))
-    for word in words:
-        conditions.append((Product.info.ilike(f"%{word}%"), 0.5))
+        if len(word) > 1:  # Longer words
+            conditions.append((Product.title.ilike(f"%{word}%"), 2.0))
+        else:  # Single-character words
+            conditions.append((
+                Product.title.ilike(f"{word} %") |  # Start of word
+                Product.title.ilike(f"% {word}") |  # End of word
+                Product.title.ilike(f"% {word} %"),  # Middle of word
+                1.5
+            ))
 
-    from sqlalchemy import case as sql_case
-    # 4) Accessory logic: if user NOT searching for accessories => push them down
-    # Build "is_accessory" = 1 if product title has any accessory keyword, else 0
+    # Accessory condition (push accessories lower if not in query)
+    from sqlalchemy import case as sql_case, or_
     accessory_condition = or_(
         *[Product.title.ilike(f"%{acc_keyword}%") for acc_keyword in all_accessories]
     )
@@ -115,31 +113,23 @@ def get_search_query(db: Session, query: str, sort_by: str):
         else_=0
     ).label("is_accessory")
 
-    # 5) Summation for "relevance"
+    # Relevance score
     relevance_score = sum(
         sql_case((cond, weight), else_=0.0)
         for cond, weight in conditions
     ).label("relevance")
 
-    # 6) Filter out irrelevant items (relevance > 0)
-    positive_conditions = [cond for (cond, wt) in conditions if wt > 0]
+    # Query base
+    positive_conditions = [cond for cond, weight in conditions if weight > 0]
     combined_query = db.query(
         Product,
         relevance_score.label("relevance"),
         is_accessory_expr.label("is_accessory")
     ).filter(or_(*positive_conditions))
 
-    # 7) Sorting
+    # Sorting logic
     if sort_by == "relevance":
-        if is_accessory_query:
-            # Accessory query => normal relevance sort
-            combined_query = combined_query.order_by(desc("relevance"))
-        else:
-            # Non-accessory => push accessories down, then sort by relevance
-            combined_query = combined_query.order_by(
-                asc("is_accessory"),
-                desc("relevance")
-            )
+        combined_query = combined_query.order_by(asc("is_accessory"), desc("relevance"))
     elif sort_by == "price-low":
         combined_query = combined_query.order_by(
             asc("is_accessory"),
@@ -153,13 +143,13 @@ def get_search_query(db: Session, query: str, sort_by: str):
             desc(Product.price)
         )
     elif sort_by == "newest":
-        # Adjust if you store date in a different field
         combined_query = combined_query.order_by(
             asc("is_accessory"),
             desc(Product.last_updated)
         )
 
     return combined_query.filter(relevance_score > 0)
+
 
 
 # ----------------------------------------
