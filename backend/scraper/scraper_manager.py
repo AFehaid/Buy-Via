@@ -65,9 +65,12 @@ class ScraperManager:
 
         if existing_product:
             updated = False
+            price_changed = False
             messages = []
 
+            # Check if price changed
             if existing_product.price != price:
+                price_changed = True
                 price_history = ProductPriceHistory(
                     product_id=existing_product.product_id,
                     old_price=existing_product.price if existing_product.price is not None else 0.0,
@@ -89,19 +92,23 @@ class ScraperManager:
                 existing_product.image_url = image_url
                 updated = True
 
-            if updated:
-                if existing_product.search_value != search_value:
-                    messages.append(f"Search value updated to {search_value}")
-                    existing_product.search_value = search_value
+            if existing_product.search_value != search_value:
+                messages.append(f"Search value updated to {search_value}")
+                existing_product.search_value = search_value
+                updated = True
 
+            # Only update last_updated if the price changed
+            if price_changed:
                 existing_product.last_updated = datetime.now(timezone.utc)
-                db.commit()
 
+            if updated:
+                db.commit()
                 print(f"[{search_value}][{current_index}/{total_values}][{store_name}][Product ID: {existing_product.product_id}] {title}")
                 for msg in messages:
                     print(f" - {msg}")
             else:
                 print(f"[{search_value}][{current_index}/{total_values}][{store_name}][Product ID: {existing_product.product_id}] {title}: No changes.")
+
         else:
             # Add new product with fallback category ID 54
             new_product = Product(
@@ -114,10 +121,12 @@ class ScraperManager:
                 availability=True,
                 store_id=store.store_id,
                 category_id=fallback_category_id,  # Assign fallback category ID 54
+                last_updated=datetime.now(timezone.utc)  # For a brand-new product
             )
             db.add(new_product)
             db.commit()
             print(f"[{search_value}][{current_index}/{total_values}][{store_name}][Product ID: {new_product.product_id}] {title}: Added to database.")
+
 
 
     def run_scraper_for_value(self, scraper, search_value, current_index, total_values):
