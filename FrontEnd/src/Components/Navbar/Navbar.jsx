@@ -361,7 +361,7 @@ const Navbar = () => {
                         <Dropdown.Menu className='dropdown-menu'>
                             {isLoggedIn ? (
                                 <>
-                                    <Dropdown.Item className='dropdown-items' href="/profile">Profile</Dropdown.Item>
+                                    <Dropdown.Item className='dropdown-items' href="/alerts">Alerts</Dropdown.Item>
                                     <Dropdown.Item className='dropdown-items' href="/settings">Settings</Dropdown.Item>
                                     <Dropdown.Item className='dropdown-items' onClick={handleLogout}>
                                         Logout

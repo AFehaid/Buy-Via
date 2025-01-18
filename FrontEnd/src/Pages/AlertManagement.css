@@ -1,0 +1,438 @@
+/* AlertManagement.css */
+.alert-management-container {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+    padding: 80px 40px;
+  }
+  
+  .alert-management-header {
+    background-color: white;
+    padding: 20px 40px;
+    border-bottom: 1px solid #e5e7eb;
+    margin: -20px -40px 30px -40px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .alert-management-header-content {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .alert-management-title {
+    font-size: 28px;
+    color: #1a1a1a;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .alert-management-view-toggle {
+    display: flex;
+    gap: 8px;
+    background-color: #f3f4f6;
+    padding: 4px;
+    border-radius: 8px;
+  }
+  
+  .alert-management-view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s ease;
+  }
+  
+  .alert-management-view-btn:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+  
+  .alert-management-view-btn.active {
+    background-color: white;
+    color: #2563eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* List View */
+  .alert-management-container-list {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .alert-management-card-list {
+    display: flex;
+    align-items: flex-start;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    padding: 20px;
+  }
+  
+  .alert-management-card-list:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .alert-management-card-list .alert-management-content {
+    padding: 0 20px;
+  }
+
+  .alert-management-product-info-list {
+    width: 180px;
+    flex-shrink: 0;
+    margin-right: 40px;
+  }
+  
+  .alert-management-image-wrapper {
+    width: 100%;
+    height: 160px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .alert-management-product-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+  
+  .alert-management-product-title {
+    font-size: 14px;
+    text-align: center;
+    margin: 0;
+    line-height: 1.4;
+    color: #374151;
+    max-width: 380px;
+    margin: 20px auto;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 40px; 
+  }
+  
+  .alert-management-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 20px;
+  }
+  
+  .alert-management-btn-save,
+  .alert-management-btn-cancel {
+    flex: 1;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+  }
+  
+  .alert-management-btn-save {
+    background-color: #16a34a;
+    color: white;
+  }
+  
+  .alert-management-btn-save:hover {
+    background-color: #15803d;
+  }
+  
+  .alert-management-btn-save:active {
+    transform: translateY(1px);
+  }
+  
+  .alert-management-btn-cancel {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .alert-management-btn-cancel:hover {
+    background-color: #e5e7eb;
+  }
+  
+  .alert-management-btn-cancel:active {
+    transform: translateY(1px);
+  }
+
+  /* Grid View */
+  .alert-management-container-grid {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 24px;
+    padding: 0 20px;
+  }
+  
+  .alert-management-card-grid {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+  }
+  
+  .alert-management-card-grid:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .alert-management-card-grid .alert-management-content {
+    padding: 16px;
+  }
+
+  .alert-management-price-section {
+    display: flex;
+    gap: 40px;
+    width: 100%;
+  }
+  
+  .alert-management-price-current,
+  .alert-management-price-threshold {
+    flex: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .alert-management-price-label {
+    display: block;
+    color: #6b7280;
+    font-size: 13px;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  
+  .alert-management-price-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+  
+  .alert-management-price-current .alert-management-price-value {
+    color: #2563eb;
+  }
+  
+  .alert-management-actions {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    margin-top: 16px;
+  }
+  
+.alert-management-price-edit {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .alert-management-input {
+    width: 100%;
+    max-width: 150px;
+    padding: 8px 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 16px;
+    text-align: center;
+    transition: border-color 0.2s ease;
+    -moz-appearance: textfield; /* Remove spinner for Firefox */
+  }
+  
+  /* Remove spinner for Chrome/Safari/Edge */
+  .alert-management-input::-webkit-outer-spin-button,
+  .alert-management-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  
+  .alert-management-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+  }
+
+  .alert-management-btn-edit,
+  .alert-management-btn-delete {
+    flex: 1;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .alert-management-btn-edit {
+    background-color: #eef2ff;
+    color: #4f46e5;
+    border: none;
+  }
+  
+  .alert-management-btn-edit:hover {
+    background-color: #e0e7ff;
+  }
+  
+  .alert-management-btn-delete {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: none;
+  }
+  
+  .alert-management-btn-delete:hover {
+    background-color: #fee2e2;
+  }
+  
+  .alert-management-empty {
+    max-width: 600px;
+    margin: 60px auto;
+    text-align: center;
+    padding: 48px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .alert-management-empty-icon {
+    color: #6b7280;
+    margin-bottom: 16px;
+  }
+  
+  .alert-management-empty-text {
+    color: #6b7280;
+    font-size: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .alert-management-btn-primary {
+    background-color: #2563eb;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .alert-management-btn-primary:hover {
+    background-color: #1d4ed8;
+  }
+  
+  /* Modal */
+  .alert-management-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .alert-management-modal {
+    background: white;
+    padding: 32px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .alert-management-modal-title {
+    font-size: 20px;
+    margin-bottom: 12px;
+    color: #1a1a1a;
+    
+  }
+  
+  .alert-management-modal-text {
+    color: #6b7280;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+  
+  .alert-management-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+  
+  /* Responsive */
+  @media (max-width: 1200px) {
+    .alert-management-input {
+        padding: 10px 12px;
+        font-size: 16px; /* Prevent zoom on mobile */
+      }
+    .alert-management-container {
+      padding: 20px;
+    }
+    
+    .alert-management-header {
+      padding: 20px;
+      margin: 40px -20px 24px -20px;
+    }
+    
+    .alert-management-price-section {
+      gap: 20px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .alert-management-card-list {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .alert-management-product-info-list {
+      width: 100%;
+      margin-right: 0;
+      margin-bottom: 16px;
+    }
+    
+    .alert-management-content {
+        padding: 0;
+    }
+    .alert-management-price-current,
+    .alert-management-price-threshold {
+      width: 100%;
+      max-width: 200px;
+    }
+    .alert-management-price-section {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+    
+    .alert-management-actions {
+      width: 100%;
+    }
+    
+    .alert-management-btn-edit,
+    .alert-management-btn-delete {
+      flex: 1;
+    }
+  }
