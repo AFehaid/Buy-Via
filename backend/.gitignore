@@ -3,3 +3,4 @@ venv/
 backend/backend/buy_via.db
 **/__pycache__/
 buy_via.db
+ai_modules/classification_model.pkl
