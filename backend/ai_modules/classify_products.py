@@ -34,27 +34,22 @@ You must classify products into exactly one category from the following list:
 {", ".join(categories)}
 
 EXAMPLES (Product Title -> Category):
-"Apple MacBook Air 13-inch" -> Laptops & Notebooks
+"Geepas 165 Liter Chiller Single Door Beverage Cooler with Digital Temperature Control | Model No GSC1601BE with 2 Years Warranty" -> Home Appliances (Refrigerators, Washers)
 "ASUS ROG Ally Gaming Handheld" -> Handheld Gaming Devices (ROG Ally, Steam Deck, Nintendo Switch Lite)
-"Apple iPhone 15 Pro" -> Smartphones & Cell Phones
-"Samsung 4K UHD Monitor" -> Monitors & Displays
-"Canon EOS R5 Mirrorless Camera" -> Cameras & Camcorders
-"Logitech MX Master 3 Wireless Mouse" -> Computer Peripherals (Keyboards, Mice)
-"Breville Espresso Machine" -> Kitchen Appliances (Blenders, Microwaves, Coffee Makers)
-"Ring Video Doorbell" -> Home Security & Surveillance
-"Adidas Running Shoes" -> Shoes (Men, Women, Kids)
-"Paper Mate Ballpoint Pens" -> Office Supplies (Paper, Pens, Folders)
-"Nintendo Switch OLED Console" -> Gaming Consoles (PlayStation, Xbox, Nintendo)
-"Zelda: Tears of the Kingdom" -> Video Games
-"Dyson Vacuum Cleaner" -> Home Appliances (Refrigerators, Washers)
-"PlayStation 5 Controller" -> Gaming Accessories (Controllers, VR Headsets, Cases)
-"ROG Gladius III Wireless Gaming Mouse" -> Computer Peripherals (Keyboards, Mice)
-"HP 203A Laser Toner Cartridge" -> Printers & Scanners
-"4'x6' Thermal Shipping Labels Roll" -> Office Supplies (Paper, Pens, Folders)
-"Canon Pixma G3420 MegaTank AIO" -> Printers & Scanners
-"Car Dashboard Phone Mount" -> Car Electronics & Accessories (Car Stereos, Dashcams, GPS)
-"GoPro Hero 11 Black" -> Cameras & Camcorders
-"ASUS GeForce RTX 4070 GPU" -> Computer Components (CPUs, GPUs, etc.)
+"Alpicool T50 50L Car Fridge Freezer Portable Car Refrigerator 12/24V Electric Cooler for Camping, Road Trip, Picnic" -> Home Appliances (Refrigerators, Washers)
+"Karcher, Handheld Pressure Washer, 130 Bar" -> Home Appliances (Refrigerators, Washers)
+"Huawei Sound X VIP service card" -> Gift Cards & Vouchers
+"Panasonic 1.5 Ton/18000 BTU Split Air Conditione" -> Home Appliances (Refrigerators, Washers)
+"Travel Electric Kettle, 500ml Portable Mini Tea Coffee Kettle Cup " -> Kitchen Appliances (Blenders, Microwaves, Coffee Makers)
+"Huawei Gift box, White" -> Gift Cards & Vouchers
+"Classical Mona Lisa Painting Bathroom Canvas Wall Art" -> Furniture & Home Decor (Sofas, Lamps, Rugs)
+"GUESS Girl Belle Eau de Toilette 100 ml + Body Lotion 200 ml+ Mini 15 ml, Gift Set for Women" -> Beauty Products (Makeup, Skincare)
+"COPOZZ Scuba Mask, No Fogging Snorkeling Scuba Dive Glasses" -> Fitness Equipment (Treadmills, Weights)
+"Panasonic/Dry Heavy Iron/1000W-Japan" -> Home Appliances (Refrigerators, Washers)
+"Philips Water Filter" -> Kitchen Appliances (Blenders, Microwaves, Coffee Makers)
+"Looking through the binoculars of a tourist:" -> Books & Magazines
+"Xiaomi Electric Scooter 4" -> Outdoor Gear (Tents, Camping Equipment)
+"Azonee Mopping Robot Vacuum Cleaner" -> Smart Home Devices (Smart Speakers, Smart Lights)
 
 DO NOT EXPLAIN. JUST OUTPUT THE EXACT CATEGORY NAME.
     """
