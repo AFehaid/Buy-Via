@@ -1,7 +1,7 @@
 import pickle
 
 # Load the saved model
-model_path = "/home/fahoo/Documents/Buy-Via/backend/ai_modules/classification_model.pkl"
+model_path = "ai_modules/classification_model.pkl"
 with open(model_path, "rb") as f:
     loaded_model = pickle.load(f)
 

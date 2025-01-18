@@ -321,72 +321,86 @@ class AmazonScraper(StoreScraper):
     def scrape_availability(self, product_link):
         """
         Check availability and price of a product on Amazon based on its link.
-        1) If not available -> skip price extraction and set price = "N/A".
-        2) If available -> do the normal 3-step approach to find a price.
+        1) If #add-to-cart-button is present => consider available
+        2) Otherwise parse #availability or #availabilityInsideBuyBox_feature_div for text.
+        3) Extract price from multiple possible selectors (apexPriceToPay, a-price-whole + a-price-fraction, etc.)
         """
         try:
             self.driver.get(product_link)
             soup = BeautifulSoup(self.driver.page_source, "html.parser")
 
-            # =========== AVAILABILITY DETECTION ===========
+            # ----------- AVAILABILITY DETECTION -----------
             availability = False
 
-            # 1) If text "In Stock" appears in .a-size-medium.a-color-success
-            availability_elem = soup.select_one(".a-size-medium.a-color-success")
-            if availability_elem:
-                availability_text = availability_elem.get_text(strip=True)
-                if "in stock" in availability_text.lower():
-                    availability = True
-
-            # 2) If the #add-to-cart-button is present, also consider it available
+            # 1) If #add-to-cart-button is present => consider it available
             add_to_cart_button = soup.select_one("#add-to-cart-button")
             if add_to_cart_button:
                 availability = True
 
-            # 3) Check if "Currently unavailable" is present
-            #    If found, override availability to False
-            unavailable_element = soup.select_one("#availability span.a-declarative")
-            if unavailable_element:
-                unavailable_text = unavailable_element.get_text(strip=True)
-                if "currently unavailable" in unavailable_text.lower():
+            # 2) If not found, parse text in #availability and #availabilityInsideBuyBox_feature_div
+            #    Check for phrases like "In Stock", "Only X left", "Currently unavailable", etc.
+            availability_container = soup.select_one("#availability") or soup.select_one("#availabilityInsideBuyBox_feature_div")
+            if availability_container:
+                availability_text = availability_container.get_text(strip=True).lower()
+                
+                # If we find "in stock" or "only x left" => available
+                if ("in stock" in availability_text) or ("only" in availability_text and "left" in availability_text):
+                    availability = True
+                
+                # If we see "currently unavailable", "out of stock", "temporarily out of stock" => not available
+                if ("unavailable" in availability_text) or ("out of stock" in availability_text):
                     availability = False
 
-            # =========== PRICE DETECTION ===========
-            if not availability:
-                # If the product is not available, forcibly skip price:
-                price = "N/A"
-            else:
-                price = "N/A"
-                # 1) apexPriceToPay .a-offscreen
+            # ----------- PRICE DETECTION -----------
+            # If not available => skip price
+            price = "N/A"
+            if availability:
+                # Attempt each known pattern:
+                # 1) apexPriceToPay
                 apex_elem = soup.select_one("span.a-price.a-text-price.a-size-medium.apexPriceToPay span.a-offscreen")
-                if apex_elem:
+                if apex_elem and apex_elem.text.strip():
                     raw_price = apex_elem.get_text(strip=True)
-                    raw_price = raw_price.replace("SAR", "").replace("ر.س", "").strip()
-                    price = self.normalize_price(raw_price)
-                else:
+                    price = self._extract_and_normalize_price(raw_price)
+
+                if price == "N/A":
                     # 2) a-price-whole + a-price-fraction
                     whole_elem = soup.select_one("span.a-price-whole")
                     fraction_elem = soup.select_one("span.a-price-fraction")
                     if whole_elem and fraction_elem:
-                        whole_str = whole_elem.get_text(strip=True).replace(",", "")
-                        frac_str = fraction_elem.get_text(strip=True)
-                        if whole_str.endswith("."):
-                            whole_str = whole_str[:-1]  # remove trailing dot
-                        combined_price = f"{whole_str}.{frac_str}"
-                        price = self.normalize_price(combined_price)
-                    else:
-                        # 3) fallback: .aok-offscreen
-                        fallback_elem = soup.select_one("div.a-section.aok-relative span.aok-offscreen")
-                        if fallback_elem:
-                            raw_price = fallback_elem.get_text(strip=True)
-                            raw_price = raw_price.replace("SAR", "").replace("ر.س", "").strip()
-                            price = self.normalize_price(raw_price)
+                        combined_price = whole_elem.get_text(strip=True).replace(",", "")
+                        frac = fraction_elem.get_text(strip=True)
+                        # remove any trailing '.' in the whole_elem text
+                        if combined_price.endswith("."):
+                            combined_price = combined_price[:-1]
+                        raw_price = f"{combined_price}.{frac}"
+                        price = self._extract_and_normalize_price(raw_price)
+
+                if price == "N/A":
+                    # 3) fallback: .aok-offscreen or #price_inside_buybox
+                    fallback_elem = soup.select_one("div.a-section.aok-relative span.aok-offscreen")
+                    if not fallback_elem:
+                        fallback_elem = soup.select_one("#price_inside_buybox")
+                    if fallback_elem and fallback_elem.text.strip():
+                        raw_price = fallback_elem.get_text(strip=True)
+                        price = self._extract_and_normalize_price(raw_price)
 
             return {"availability": availability, "price": price}
 
         except Exception as e:
             print(f"[Amazon] Error checking availability and price for {product_link}: {e}")
             return {"availability": False, "price": "N/A"}
+
+    def _extract_and_normalize_price(self, raw_price):
+        # Helper to remove currency text (SAR, ر.س, etc.) and parse float
+        try:
+            raw_price = raw_price.replace("SAR", "").replace("ر.س", "")
+            # remove any extra characters
+            raw_price = re.sub(r"[^\d.]", "", raw_price)
+            normalized_price = float(raw_price)
+            return f"{normalized_price:.2f}"
+        except Exception:
+            return "N/A"
+
 
 
 class ExtraScraper(StoreScraper):
