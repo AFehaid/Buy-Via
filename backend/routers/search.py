@@ -234,6 +234,50 @@ router = APIRouter(prefix="/search", tags=["search"])
 # GET /search
 # ----------------------------------------
 
+@router.get("/quick-search", response_model=SearchResponse)
+def quick_search(
+    query: str = Query(..., min_length=1, description="Search query"),
+    db: Session = Depends(get_db),
+):
+    """
+    Perform a quick search with a single 'query' parameter.
+    - Returns only in-stock products.
+    - Fixed page size of 20.
+    - Sorted by relevance.
+    """
+    # Build the base search query, sorted by relevance
+    combined_query = get_search_query(db, query, sort_by="relevance")
+
+    # Only in-stock products
+    combined_query = combined_query.filter(Product.availability == True)
+
+    # Count total (for completeness in response)
+    total = combined_query.count()
+
+    # Limit to 20 items (fixed page size)
+    results = combined_query.limit(20).all()
+    if not results:
+        raise HTTPException(status_code=404, detail="No products found matching the query")
+
+    # Extract just the Product objects from the query results
+    products_only = [row[0] for row in results]
+
+    # Reorder products in round-robin order by store_id
+    reordered_products = reorder_by_store_round_robin(products_only)
+
+    # Get price history
+    product_ids = [product.product_id for product in reordered_products]
+    last_old_prices = get_price_history(db, product_ids)
+
+    # Format the products for the response
+    products_response = [
+        format_product_response(product, last_old_prices.get(product.product_id))
+        for product in reordered_products
+    ]
+
+    return SearchResponse(total=total, products=products_response)
+
+
 @router.get("/recommendations", response_model=List[ProductResponse])
 def get_user_recommendations(
     db: Session = Depends(get_db),
@@ -435,6 +479,7 @@ def search_products(
     return SearchResponse(total=total, products=products)
 
 
+
 # ----------------------------------------
 # GET /search/{product_id}
 # ----------------------------------------
@@ -464,5 +509,3 @@ def get_product(
         db.commit()
 
     return format_product_response(product, last_old_price)
-
-

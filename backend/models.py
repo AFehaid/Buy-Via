@@ -59,7 +59,7 @@ class Product(Base):
     group_id = Column(Integer, ForeignKey("product_groups.group_id", ondelete="SET NULL"), nullable=True)
     category_id = Column(Integer, ForeignKey("categories.category_id", ondelete="SET NULL"), nullable=True)
     availability = Column(Boolean, default=True)
-    last_updated = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    last_updated = Column(DateTime, default=datetime.now(timezone.utc))
     store = relationship("Store", back_populates="products")
     category = relationship("Category", back_populates="products")
     group = relationship("ProductGroup", back_populates="products")
