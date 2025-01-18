@@ -21,12 +21,11 @@ const UserRecommendations = () => {
       try {
         const url = `http://localhost:8000/search/recommendations`;
         const response = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          credentials: 'include', // Add this to send cookies
         });
         if (!response.ok) throw new Error('Failed to fetch recommendations');
         const data = await response.json();
+        
         console.log("User Recommendations:", data);
     
         if (Array.isArray(data) && data.length > 0) {

@@ -51,8 +51,11 @@ const Navbar = () => {
 
 
     const handleCategoryClick = (categoryId) => {
-        navigate(`/search?category_id=${categoryId}`);
         setIsMenuOpen(false);
+        
+        navigate(`/category/${categoryId}`);
+        
+        setSearchText('');
     };
 
     useEffect(() => {
@@ -91,16 +94,34 @@ const Navbar = () => {
     const fetchAlerts = async () => {
         try {
             const token = localStorage.getItem('token'); // Get the token from local storage
-            const user_id = 2; // Hardcoded user ID for testing
-            const response = await fetch(`http://localhost:8000/alerts/?user_id=${user_id}`, {
+    
+            // Fetch the logged-in user's details
+            const userResponse = await fetch('http://localhost:8000/auth/me', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`, // Send the token in the headers
+                    'Authorization': `Bearer ${token}`,
                 },
             });
-            if (response.ok) {
-                const alerts = await response.json();
+    
+            if (!userResponse.ok) {
+                throw new Error('Failed to fetch user details');
+            }
+    
+            const userData = await userResponse.json();
+            const userId = userData.user.id; // Extract the user ID
+    
+            // Fetch alerts for the logged-in user
+            const alertsResponse = await fetch(`http://localhost:8000/alerts/?user_id=${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+    
+            if (alertsResponse.ok) {
+                const alerts = await alertsResponse.json();
                 const alertsWithProductDetails = await Promise.all(
                     alerts.map(async (alert) => {
                         const productDetails = await fetchProductDetails(alert.product_id);

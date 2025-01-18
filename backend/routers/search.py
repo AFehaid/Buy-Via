@@ -373,23 +373,26 @@ def search_products_by_category(
 def search_products(
     query: str = Query(..., min_length=1, description="Search query"),
     page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(10, ge=1, le=100, description="Items per page"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     sort_by: Optional[str] = Query("relevance", description="Sort by: relevance, price-low, price-high, newest"),
     min_price: Optional[float] = Query(None, description="Minimum price filter"),
     max_price: Optional[float] = Query(None, description="Maximum price filter"),
     store_filter: Optional[int] = Query(None, description="Filter by store ID"),
+    category_id: Optional[int] = Query(None, description="Filter by category ID"),
     in_stock_only: bool = Query(False, description="Filter by availability"),
     db: Session = Depends(get_db),
     current_user: Optional[dict] = Depends(get_optional_current_user),  # Optional dependency
 ):
     """
-    Search products and log user searches (if authenticated).
+    Search products with optional category filter
     """
     combined_query = get_search_query(db, query, sort_by)
 
     # Apply filters
     if store_filter is not None:
         combined_query = combined_query.filter(Product.store_id == store_filter)
+    if category_id is not None:
+        combined_query = combined_query.filter(Product.category_id == category_id)
     if min_price is not None:
         combined_query = combined_query.filter(Product.price >= min_price)
     if max_price is not None:

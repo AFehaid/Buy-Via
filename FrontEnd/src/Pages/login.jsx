@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import axios from "axios";
-import qs from "qs";
 import { useAuth } from "../Components/Navbar/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import "../Pages/login.css";
@@ -8,7 +6,7 @@ import "../Pages/login.css";
 const AuthModal = ({ mode, onClose }) => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [activeForm, setActiveForm] = useState(mode); 
+  const [activeForm, setActiveForm] = useState(mode);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -31,34 +29,46 @@ const AuthModal = ({ mode, onClose }) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-
+  
     try {
       if (activeForm === "signIn") {
-        await login(formData.username, formData.password);
-        console.log("Login successful! Token stored in localStorage.");
-        setSuccess("Logged in successfully!");
-        onClose();
+        const result = await login(formData.username, formData.password);
+        if (result) {
+          setSuccess("Logged in successfully!");
+          onClose();
+          // Force a single reload after successful login
+          window.location.reload();
+        }
       } else if (activeForm === "signUp") {
         if (formData.password !== formData.confirmPassword) {
           setError("Passwords do not match.");
           return;
         }
 
-        const response = await axios.post("http://localhost:8000/auth/register", {
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
+        const response = await fetch("http://localhost:8000/auth/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+          }),
         });
 
-        if (response.status === 201) {
-          console.log("Registration successful!");
+        if (response.ok) {
           setSuccess("Account created successfully! Please sign in.");
-          setActiveForm("signIn"); 
+          setActiveForm("signIn");
+          setFormData({ username: "", email: "", password: "", confirmPassword: "" }); // Clear form
+        } else {
+          const errorData = await response.json();
+          setError(errorData.detail || "Registration failed. Please try again.");
         }
       }
     } catch (err) {
       console.error("Error during login/registration:", err);
-      setError(err.response?.data?.detail || "An error occurred. Please try again.");
+      setError("An error occurred. Please try again.");
     }
   };
 

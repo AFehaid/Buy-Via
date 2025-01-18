@@ -1,62 +1,101 @@
 import React, { createContext, useContext, useMemo, useState, useEffect } from "react";
-import axios from "axios";
-import qs from "qs";
+import { jwtDecode } from 'jwt-decode';
 
 const AuthContext = createContext();
 
-const AuthProvider = (props) => {
-  const { children } = props;
-  const [token, setToken_] = useState(() => localStorage.getItem("token"));
+const AuthProvider = ({ children }) => {
+  const [token, setToken_] = useState(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken && !isTokenExpired(storedToken)) {
+      return storedToken;
+    }
+    localStorage.removeItem("token");
+    return null;
+  });
   const [isLoggedIn, setIsLoggedIn] = useState(!!token);
-  const [logoutTimer, setLogoutTimer] = useState(null);
+
+  function isTokenExpired(token) {
+    try {
+      const decoded = jwtDecode(token);
+      return decoded.exp * 1000 < Date.now();
+    } catch {
+      return true;
+    }
+  }
+
+  useEffect(() => {
+    if (token) {
+      const decoded = jwtDecode(token);
+      const expiresIn = decoded.exp * 1000 - Date.now();
+      
+      if (expiresIn > 0) {
+        const timer = setTimeout(() => {
+          logout();
+        }, expiresIn);
+        
+        return () => clearTimeout(timer);
+      } else {
+        logout();
+      }
+    }
+  }, [token]);
 
   const setToken = (newToken) => {
-    setToken_(newToken);
+    if (newToken && !isTokenExpired(newToken)) {
+      setToken_(newToken);
+      localStorage.setItem("token", newToken);
+      setIsLoggedIn(true);
+    } else {
+      logout();
+    }
   };
 
   const login = async (username, password) => {
     try {
-      const response = await axios.post(
-        "http://localhost:8000/auth/token",
-        qs.stringify({ username, password }), // Convert to form-urlencoded
-        {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        }
-      );
+      const response = await fetch("http://localhost:8000/auth/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ username, password }).toString(),
+        credentials: 'include',
+      });
   
-      if (response.status === 200) {
-        const token = response.data.access_token;
-        setToken(token);
-        localStorage.setItem("token", token); // Store token in localStorage
-        setIsLoggedIn(true);
-  
-        setLogoutTimer(setTimeout(logout, 1800000)); // Logout after 30 minutes
+      if (response.ok) {
+        const data = await response.json();
+        setToken(data.access_token);
+        return data;
+      } else {
+        throw new Error("Login failed");
       }
     } catch (error) {
-      console.error("Login failed:", error.response?.data || error.message);
-      throw error; // Rethrow the error to handle it in the Login component
+      console.error("Login failed:", error);
+      throw error;
     }
   };
 
   const logout = () => {
-    setToken(null);
-    localStorage.removeItem("token"); // Clear token from localStorage
+    setToken_(null);
+    localStorage.removeItem("token");
     setIsLoggedIn(false);
-    if (logoutTimer) {
-      clearTimeout(logoutTimer); // Clear the logout timer
-      setLogoutTimer(null);
-    }
   };
 
   useEffect(() => {
-    return () => {
-      if (logoutTimer) {
-        clearTimeout(logoutTimer);
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      
+      if (response.status === 401) {
+        logout();
       }
+      
+      return response;
     };
-  }, [logoutTimer]);
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
 
   const contextValue = useMemo(
     () => ({

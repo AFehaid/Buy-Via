@@ -14,6 +14,7 @@ import Sign_up from "./Pages/sign_up";
 import AuthProvider from "./Components/Navbar/AuthProvider";
 import ProductDetails from "./Pages/ProductDetails";
 import Footer from "./Components/Footer/Footer";
+import CategoryProducts from "./Pages/CategoryProducts";
 
 
 
@@ -35,7 +36,7 @@ function App() {
 
       <Route path="Login" element={<Login />}/>
       <Route path="Sign_Up" element={<Sign_up />}/>
-
+      <Route path="/category/:categoryId" element={<CategoryProducts />} />
         <Route path="Search" element={<SearchResults />} />
         <Route path="/product/:productId" element={<ProductDetails />} />
 

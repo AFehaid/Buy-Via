@@ -99,7 +99,7 @@ async def login_for_access_token(
         httponly=True,
         secure=True,  # Only send over HTTPS
         samesite="lax",  # Prevent CSRF attacks
-        max_age=31,  # Expire after 1 second
+        max_age=1800,  # Expire after 30 minutes
     )
 
     return {"access_token": token, "token_type": "bearer"}

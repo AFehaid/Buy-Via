@@ -4,8 +4,9 @@ import './SearchResults.css';
 import AMZN from '../assets/AMZN.png';
 import Jarir from '../assets/Jarir.png';
 import Extra from '../assets/Extra.png';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
+
 
 function valuetext(value) {
     return `${value} SAR`;
@@ -14,6 +15,7 @@ function valuetext(value) {
 const minDistance = 200;
 
 const SearchResults = () => {
+    const navigate = useNavigate();
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const query = queryParams.get('query') || '';
@@ -31,7 +33,7 @@ const SearchResults = () => {
     const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true); 
     const observer = useRef();
     const lastProductRef = useRef();
-    const pageSize = 10;
+    const pageSize = 20; 
     const sar = ' SAR';
     const [showScrollTop, setShowScrollTop] = useState(false);
     const categoryId = queryParams.get('category_id') || 'all';
@@ -159,45 +161,45 @@ const SearchResults = () => {
         setHasMore(true);
     }, [query, sortBy, selectedStore, priceRange[0], priceRange[1], categoryId]);
 
-    useEffect(() => {
-        setResults([]);
-        setPage(1);
-        setHasMore(true);
-    }, [query, sortBy, selectedStore, priceRange[0], priceRange[1], selectedCategory]);
 
-    const fetchResults = useCallback(async () => {
-        try {
-            setLoading(true);
-            let url;
-            const maxPrice = priceRange[1] === 5000 ? 50000 : priceRange[1]; 
+const fetchResults = useCallback(async () => {
+    try {
+        setLoading(true);
+        let url;
+        const maxPrice = priceRange[1] === 5000 ? 50000 : priceRange[1]; 
+        const storeFilter = selectedStore === 'all' ? '' : selectedStore;
+        const categoryFilter = selectedCategory === 'all' ? '' : selectedCategory;
 
-            if (categoryId === 'all') {
-                url = `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}`;
-            } else {
-                url = `http://localhost:8000/search/category-products?category_id=${categoryId}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}`;
-            }
+        // Always use the search endpoint, but add category_id as a filter if selected
+        url = `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}${storeFilter ? `&store_filter=${storeFilter}` : ''}${categoryFilter ? `&category_id=${categoryFilter}` : ''}`;
 
-            const response = await fetch(url);
-            const data = await response.json();
-
-            if (data && data.products) {
-                setResults(prev => {
-                    if (page === 1) {
-                        return data.products;
-                    }
-                    const newResults = [...prev, ...data.products];
-                    return Array.from(new Map(newResults.map(item => 
-                        [item.product_id, item])).values());
-                });
-                setTotalResults(data.total);
-                setHasMore(data.products.length === pageSize);
-            }
-        } catch (error) {
-            console.error('Error fetching search results:', error);
-        } finally {
-            setLoading(false);
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-    }, [query, page, sortBy, selectedStore, priceRange[0], priceRange[1], categoryId, pageSize]);
+        const data = await response.json();
+        if (!data.products || !Array.isArray(data.products)) {
+            throw new Error('Invalid response format');
+        }
+
+        if (data && data.products) {
+            setResults(prev => {
+                if (page === 1) {
+                    return data.products;
+                }
+                const newResults = [...prev, ...data.products];
+                return Array.from(new Map(newResults.map(item => 
+                    [item.product_id, item])).values());
+            });
+            setTotalResults(data.total);
+            setHasMore(data.products.length === pageSize);
+        }
+    } catch (error) {
+        console.error('Error fetching search results:', error);
+    } finally {
+        setLoading(false);
+    }
+}, [query, page, sortBy, selectedStore, priceRange, selectedCategory, pageSize]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -221,38 +223,36 @@ const SearchResults = () => {
     }, [location.search]);
 
     useEffect(() => {
-        if (!hasMore || loading) return;
-
-        const handleObserver = (entries) => {
-            const [target] = entries;
-            if (target.isIntersecting && hasMore) {
-                setPage(prev => prev + 1);
-            }
-        };
-
-        const options = {
-            root: null,
-            rootMargin: '20px',
-            threshold: 0.1
-        };
-
-        const currentObserver = new IntersectionObserver(handleObserver, options);
-        
-        if (lastProductRef.current) {
-            currentObserver.observe(lastProductRef.current);
-        }
-
-        return () => {
-            if (lastProductRef.current) {
-                currentObserver.unobserve(lastProductRef.current);
-            }
-        };
+        if (!hasMore || loading || !lastProductRef.current) return;
+    
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore) {
+                    setPage(prev => prev + 1);
+                }
+            },
+            { threshold: 0.5 }
+        );
+    
+        observer.observe(lastProductRef.current);
+        return () => observer.disconnect();
     }, [hasMore, loading]);
 
 
     const handleCategoryChange = (categoryId) => {
         setSelectedCategory(categoryId);
         setPage(1);
+        
+        const newUrl = new URL(window.location.href);
+        if (categoryId === 'all') {
+            newUrl.searchParams.delete('category_id');
+        } else {
+            newUrl.searchParams.set('category_id', categoryId);
+        }
+        window.history.pushState({}, '', newUrl);
+        
+        setResults([]);
+        fetchResults();
     };
 
     const toggleMainCategory = (header) => {
