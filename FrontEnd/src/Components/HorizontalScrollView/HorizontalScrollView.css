@@ -239,6 +239,52 @@ html, body {
   transition: all 0.3s ease;
 }
 
+.horizontal-scroll-view.rtl {
+  direction: rtl;
+}
+
+.horizontal-scroll-view.rtl .scroll-container {
+  direction: rtl;
+}
+
+.horizontal-scroll-view.rtl .item-card {
+  text-align: right;
+}
+
+.horizontal-scroll-view.rtl .item-footer {
+  flex-direction: row-reverse;
+}
+
+.horizontal-scroll-view.rtl .store-icon {
+  margin-right: 8px;
+  margin-left: 0;
+}
+
+.horizontal-scroll-view.rtl .price-content {
+  align-items: flex-end;
+}
+
+/* Adjust scrollbar for RTL */
+.rtl-scroll::-webkit-scrollbar {
+  direction: rtl;
+}
+
+/* Ensure proper text alignment in RTL mode */
+[dir='rtl'] .prompt-text {
+  right: 0;
+  left: auto;
+}
+
+/* Price formatting in RTL */
+[dir='rtl'] .price-container {
+  align-items: flex-end;
+}
+
+[dir='rtl'] .discount-badge {
+  margin-right: 0;
+  margin-left: 4px;
+}
+
 @media (max-width: 768px) {
   .horizontal-scroll-view {
       margin: 20px 0 10px 0;

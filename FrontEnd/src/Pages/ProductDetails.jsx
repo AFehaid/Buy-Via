@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 import Jarir from '../assets/Jarir.png';
 import AMZN from '../assets/AMZN1.png';
 import Extra from '../assets/Extra1.png';
@@ -13,6 +14,7 @@ const ProductDetails = () => {
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const { t, isRTL, formatCurrency } = useLanguage();
 
     const getStoreLogo = (storeId) => {
         switch(storeId) {
@@ -51,25 +53,25 @@ const ProductDetails = () => {
         return (
             <div className="loading-container-details">
                 <Loader2 className="loading-spinner-details" />
-                <p>Loading product details...</p>
+                <p>{t('common.loading')}</p>
             </div>
         );
     }
 
     if (error) {
-        return <div className="error-message-details">{error}</div>;
+        return <div className="error-message-details">{t('common.error')}</div>;
     }
 
     if (!product) return null;
 
-    const defaultDescription = "This product offers a great combination of quality and value, designed to meet your needs. Suitable for various applications, it ensures durability and performance. For more details, please refer to the specifications or contact the seller.";
+    const defaultDescription = t('product.defaultDescription');
     
     const discount = product.last_old_price 
         ? calculateDiscount(product.price, product.last_old_price)
         : null;
 
     return (
-        <div className="container-details">
+        <div className={`container-details ${isRTL ? 'rtl' : ''}`}>
             <div className="left-column-details">
                 <div className="product-image-container-details">
                     <img 
@@ -83,9 +85,13 @@ const ProductDetails = () => {
 
             <div className="right-column-details">
                 <div className="product-description-details">
-                    <span className="product-category-details">{product.category || 'Category'}</span>
+                    <span className="product-category-details">
+                        {product.category || t('common.category')}
+                    </span>
                     <h1 className="product-title-details">{product.title}</h1>
-                    <p className="product-info-details">{product.info || defaultDescription}</p>
+                    <p className="product-info-details">
+                        {product.info || defaultDescription}
+                    </p>
                 </div>
 
                 <div className={product.availability !== false ? 'product-price-details' : 'product-not-available-details'}>
@@ -93,21 +99,21 @@ const ProductDetails = () => {
                         {product.price !== null && product.availability ? (
                             <>
                                 <p className="current-price-details">
-                                    {product.price.toFixed(2)} SAR
+                                    {formatCurrency(product.price)}
                                 </p>
                                 {discount && (
                                     <>
                                         <p className="old-price-details">
-                                            {product.last_old_price.toFixed(2)} SAR
+                                            {formatCurrency(product.last_old_price)}
                                         </p>
                                         <span className="discount-badge-details">
-                                            {discount.toFixed(0)}% OFF
+                                            {discount.toFixed(0)}% {t('common.off')}
                                         </span>
                                     </>
                                 )}
                             </>
                         ) : (
-                            <p>Product not available</p>
+                            <p>{t('product.notAvailable')}</p>
                         )}
                     </div>
 
@@ -124,8 +130,8 @@ const ProductDetails = () => {
                                     href={getStoreLogo(product.store_id)}
                                 />
                             </svg>
-                            <span className="via-details">Via</span>
-                            <span className="buy-details">Buy</span>
+                            <span className="via-details">{t('common.via')}</span>
+                            <span className="buy-details">{t('product.buy')}</span>
                         </button>
                     )}
                 </div>

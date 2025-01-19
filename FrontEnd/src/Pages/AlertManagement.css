@@ -256,10 +256,10 @@
     font-size: 16px;
     text-align: center;
     transition: border-color 0.2s ease;
-    -moz-appearance: textfield; /* Remove spinner for Firefox */
-  }
+    -moz-appearance: textfield; 
+    outline: none; 
+}
   
-  /* Remove spinner for Chrome/Safari/Edge */
   .alert-management-input::-webkit-outer-spin-button,
   .alert-management-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
@@ -270,7 +270,7 @@
     outline: none;
     border-color: #2563eb;
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-  }
+}
 
   .alert-management-btn-edit,
   .alert-management-btn-delete {
@@ -380,7 +380,47 @@
     justify-content: flex-end;
     gap: 12px;
   }
+  .alert-management-container.rtl {
+    direction: rtl;
+  }
   
+  .rtl .alert-management-header-content {
+    flex-direction: row;
+  }
+  
+  .rtl .alert-management-title {
+    text-align: right;
+  }
+  
+  .rtl .alert-management-card-list {
+    flex-direction: row-reverse;
+  }
+  
+  .rtl .alert-management-product-info-list {
+    margin-right: 0;
+    margin-left: 40px;
+  }
+  
+  .rtl .alert-management-content {
+    text-align: right;
+  }
+  
+  .rtl .alert-management-price-label {
+    text-align: right;
+  }
+  
+  .rtl .alert-management-modal {
+    text-align: right;
+  }
+  
+  .rtl .alert-management-modal-actions {
+    flex-direction: row-reverse;
+  }
+  
+  .rtl .alert-management-card-grid .alert-management-content {
+    text-align: right;
+  }
+
   /* Responsive */
   @media (max-width: 1200px) {
     .alert-management-input {
@@ -406,13 +446,44 @@
       flex-direction: column;
       align-items: stretch;
     }
+    .rtl .alert-management-card-list {
+      flex-direction: column;
+    }
     
+    .rtl .alert-management-product-info-list {
+      margin-left: 0;
+      margin-bottom: 16px;
+    }
+    
+    .rtl .alert-management-price-section {
+      flex-direction: column;
+      align-items: center;
+    }
+  
+    .rtl .alert-management-actions {
+      flex-direction: column;
+    }
     .alert-management-product-info-list {
       width: 100%;
       margin-right: 0;
       margin-bottom: 16px;
     }
-    
+        .alert-management-view-toggle {
+        display: none;  /* Hide view toggle on mobile since we force list view */
+    }
+    .alert-management-container-grid {
+      grid-template-columns: 1fr;  /* Force single column on mobile */
+  }
+
+  .alert-management-card-grid {
+      margin: 0 -20px;  /* Full width cards on mobile */
+      border-radius: 0;
+  }
+    .alert-management-input {
+        font-size: 16px;  /* Prevent zoom on iOS */
+        padding: 12px;    /* Larger touch target */
+        max-width: 180px; /* Slightly wider on mobile */
+    }
     .alert-management-content {
         padding: 0;
     }
@@ -422,17 +493,21 @@
       max-width: 200px;
     }
     .alert-management-price-section {
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-      }
-    
-    .alert-management-actions {
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+  }
+  
+  .alert-management-actions {
+      flex-direction: column;
+      gap: 12px;
+  }
+  
+  .alert-management-btn-edit,
+  .alert-management-btn-delete,
+  .alert-management-btn-save,
+  .alert-management-btn-cancel {
       width: 100%;
-    }
-    
-    .alert-management-btn-edit,
-    .alert-management-btn-delete {
-      flex: 1;
-    }
+      padding: 12px;  /* Larger touch target */
+  }
   }

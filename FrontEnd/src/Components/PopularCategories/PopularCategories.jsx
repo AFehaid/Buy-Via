@@ -1,15 +1,12 @@
+// src/components/PopularCategories/PopularCategories.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { 
   Smartphone, 
   Laptop, 
-  Tv, 
-  Headphones, 
-  Camera, 
-  Watch, 
+  Home, 
   Gamepad,
-  ShoppingBag,
-  Home,
   Shirt
 } from 'lucide-react';
 import './PopularCategories.css';
@@ -17,57 +14,123 @@ import './PopularCategories.css';
 const categories = [
   {
     id: 1,
-    name: 'Smartphones',
+    translations: {
+      en: 'Smartphones',
+      ar: 'الهواتف الذكية'
+    },
     icon: Smartphone,
     subCategories: [
-        {id: 4, name: 'Smartphones'},
-        {id: 3, name: 'Tablets'},
-        {id: 13, name: 'Accessories'}],
+      { 
+        id: 4, 
+        translations: { en: 'Smartphones', ar: 'الهواتف الذكية' }
+      },
+      { 
+        id: 3, 
+        translations: { en: 'Tablets', ar: 'الأجهزة اللوحية' }
+      },
+      { 
+        id: 13, 
+        translations: { en: 'Accessories', ar: 'الإكسسوارات' }
+      }
+    ],
     count: 7000
   },
   {
     id: 2,
-    name: 'Computers',
+    translations: {
+      en: 'Computers',
+      ar: 'الحاسبات'
+    },
     icon: Laptop,
     subCategories: [
-        {id: 2, name: 'Laptops'},
-        {id: 1, name: 'Desktops'},
-        {id: 6, name: 'Components'}],
+      { 
+        id: 2, 
+        translations: { en: 'Laptops', ar: 'الحواسيب المحمولة' }
+      },
+      { 
+        id: 1, 
+        translations: { en: 'Desktops', ar: 'الحواسيب المكتبية' }
+      },
+      { 
+        id: 6, 
+        translations: { en: 'Components', ar: 'المكونات' }
+      }
+    ],
     count: 4000
   },
   {
     id: 3,
-    name: 'Home',
+    translations: {
+      en: 'Home',
+      ar: 'المنزل'
+    },
     icon: Home,
     subCategories: [
-        {id: 23, name: 'Home Appliances'},
-        {id: 25, name: 'Furniture'},
-        {id: 27, name: 'Home Security'}],
+      { 
+        id: 23, 
+        translations: { en: 'Home Appliances', ar: 'الأجهزة المنزلية' }
+      },
+      { 
+        id: 25, 
+        translations: { en: 'Furniture', ar: 'الأثاث' }
+      },
+      { 
+        id: 27, 
+        translations: { en: 'Home Security', ar: 'الأمن المنزلي' }
+      }
+    ],
     count: 8000
   },
   {
     id: 4,
-    name: 'Gaming',
+    translations: {
+      en: 'Gaming',
+      ar: 'الألعاب'
+    },
     icon: Gamepad,
     subCategories: [
-        {id: 19, name: 'Consoles'},
-        {id: 22, name: 'Games'},
-        {id: 21, name: 'Accessories'}],
+      { 
+        id: 19, 
+        translations: { en: 'Consoles', ar: 'أجهزة الألعاب' }
+      },
+      { 
+        id: 22, 
+        translations: { en: 'Games', ar: 'الألعاب' }
+      },
+      { 
+        id: 21, 
+        translations: { en: 'Accessories', ar: 'الإكسسوارات' }
+      }
+    ],
     count: 3100
   },
   {
     id: 5,
-    name: 'Fashion',
+    translations: {
+      en: 'Fashion',
+      ar: 'الأزياء'
+    },
     icon: Shirt,
     subCategories: [
-        {id: 28, name: 'Clothing'},
-        {id: 29, name: 'Shoes'},
-        {id: 31, name: 'Jewelry'}],
+      { 
+        id: 28, 
+        translations: { en: 'Clothing', ar: 'الملابس' }
+      },
+      { 
+        id: 29, 
+        translations: { en: 'Shoes', ar: 'الأحذية' }
+      },
+      { 
+        id: 31, 
+        translations: { en: 'Jewelry', ar: 'المجوهرات' }
+      }
+    ],
     count: 1600
   }
 ];
 
 const PopularCategories = () => {
+  const { language } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState(null);
   const navigate = useNavigate();
@@ -84,25 +147,34 @@ const PopularCategories = () => {
 
   const handleSubCategoryClick = (subCategory) => {
     setSelectedSubCategory(subCategory.id);
-    navigate(`/search?category_id=${subCategory.id}`);
+    navigate(`/category/${subCategory.id}`);
+    setSearchText('');
+};
+
+  const formatItemCount = (count) => {
+    if (language === 'ar') {
+      return `${count}+ منتج`;
+    }
+    return `${count}+ items`;
   };
 
   return (
-    <div className="popular-categories">
+    <div className={`popular-categories ${language === 'ar' ? 'rtl' : ''}`}>
       <div className="popular-categories-header">
         {selectedCategory ? (
           <div className="fade-content">
-            <h2>{categories.find(c => c.id === selectedCategory)?.name}</h2>
+            <h2>{categories.find(c => c.id === selectedCategory)?.translations[language]}</h2>
             <p>
-              Explore our selection of {
-                categories.find(c => c.id === selectedCategory)?.name.toLowerCase()
-              } from top brands at competitive prices.
+              {language === 'ar' 
+                ? `اكتشف مجموعتنا من ${categories.find(c => c.id === selectedCategory)?.translations[language]} من أفضل الماركات بأسعار تنافسية`
+                : `Explore our selection of ${categories.find(c => c.id === selectedCategory)?.translations[language].toLowerCase()} from top brands at competitive prices`
+              }
             </p>
           </div>
         ) : (
           <div className="fade-content">
-            <h2>Popular Categories</h2>
-            <p>Browse products across categories</p>
+            <h2>{language === 'ar' ? 'الفئات الشائعة' : 'Popular Categories'}</h2>
+            <p>{language === 'ar' ? 'تصفح المنتجات عبر الفئات' : 'Browse products across categories'}</p>
           </div>
         )}
       </div>
@@ -118,8 +190,12 @@ const PopularCategories = () => {
                 <category.icon size={28} />
               </div>
               <div className="popular-category-info">
-                <span className="popular-category-name">{category.name}</span>
-                <span className="popular-category-count">{category.count}+ items</span>
+                <span className="popular-category-name">
+                  {category.translations[language]}
+                </span>
+                <span className="popular-category-count">
+                  {formatItemCount(category.count)}
+                </span>
               </div>
             </button>
 
@@ -133,8 +209,10 @@ const PopularCategories = () => {
                     }`}
                     onClick={() => handleSubCategoryClick(subCategory)}
                   >
-                    {subCategory.name}
-                    <span className="popular-subcategory-arrow">→</span>
+                    {subCategory.translations[language]}
+                    <span className="popular-subcategory-arrow">
+                      {language === 'ar' ? '←' : '→'}
+                    </span>
                   </button>
                 ))}
               </div>

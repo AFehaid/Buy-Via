@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../Components/Navbar/AuthProvider';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Grid, List, Bell } from 'lucide-react';
 import AuthModal from './login.jsx';
 import './AlertManagement.css';
 
 const AlertManagement = () => {
+  // Add language context
+  const { t, isRTL, formatCurrency } = useLanguage();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,18 +15,23 @@ const AlertManagement = () => {
   const [newThresholdPrice, setNewThresholdPrice] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [alertToDelete, setAlertToDelete] = useState(null);
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState(() => {
+    return window.innerWidth <= 768 ? 'list' : 'grid';
+  });
   const [showAuthModal, setShowAuthModal] = useState(false);
-  
   const { isLoggedIn, token } = useAuth();
 
+  // Add event listener for window resize
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchAlerts();
-    } else {
-      setLoading(false);
-    }
-  }, [isLoggedIn, token]);
+    const handleResize = () => {
+      if (window.innerWidth <= 768 && viewMode === 'grid') {
+        setViewMode('list');
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
 
   // Fetch product details
   const fetchProductDetails = async (productId) => {
@@ -38,19 +46,48 @@ const AlertManagement = () => {
     }
   };
 
-
   const fetchAlerts = async () => {
-    if (!token) return;
-    
     try {
-      const response = await fetch('http://localhost:8000/alerts/?user_id=9', {
+      const currentToken = localStorage.getItem("token");
+      if (!currentToken) {
+        setLoading(false);
+        return;
+      }
+
+      // First fetch the current user's details
+      const userResponse = await fetch('http://localhost:8000/auth/me', {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${currentToken}`
+        },
+        credentials: 'include'
       });
       
-      if (!response.ok) throw new Error('Failed to fetch alerts');
-      const alertsData = await response.json();
+      if (userResponse.status === 401) {
+        setShowAuthModal(true);
+        setLoading(false);
+        return;
+      }
+
+      if (!userResponse.ok) throw new Error('Failed to fetch user details');
+      const userData = await userResponse.json();
+      const userId = userData.user.id;
+
+      // Then fetch alerts for the current user
+      const alertsResponse = await fetch(`http://localhost:8000/alerts/?user_id=${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${currentToken}`
+        },
+        credentials: 'include'
+      });
+      
+      if (alertsResponse.status === 401) {
+        setShowAuthModal(true);
+        setLoading(false);
+        return;
+      }
+
+      if (!alertsResponse.ok) throw new Error('Failed to fetch alerts');
+      const alertsData = await alertsResponse.json();
       
       const alertsWithProducts = await Promise.all(
         alertsData.map(async (alert) => {
@@ -64,18 +101,23 @@ const AlertManagement = () => {
       
       setAlerts(alertsWithProducts);
     } catch (err) {
+      console.error('Error fetching alerts:', err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateAlert = async (alertId) => {
-    if (!token) {
-      setShowAuthModal(true);
-      return;
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchAlerts();
+    } else {
+      setLoading(false);
     }
-    
+  }, [isLoggedIn, token]);
+
+  // Rest of the component handlers...
+  const handleUpdateAlert = async (alertId) => {
     try {
       // Make sure we're sending a valid token
       const currentToken = localStorage.getItem("token");
@@ -119,23 +161,26 @@ const AlertManagement = () => {
     }
   };
 
-    // Handle successful login
-    const handleLoginSuccess = () => {
-      setShowAuthModal(false);
-      fetchAlerts(); // Refresh alerts after login
-    };
-
-  // Delete alert handler
   const handleDeleteAlert = async (alertId) => {
-    if (!token) return;
-    
     try {
+      const currentToken = localStorage.getItem("token");
+      if (!currentToken) {
+        setShowAuthModal(true);
+        return;
+      }
+
       const response = await fetch(`http://localhost:8000/alerts/${alertId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${currentToken}`
+        },
+        credentials: 'include'
       });
+
+      if (response.status === 401) {
+        setShowAuthModal(true);
+        return;
+      }
 
       if (!response.ok) throw new Error('Failed to delete alert');
 
@@ -143,18 +188,48 @@ const AlertManagement = () => {
       setShowDeleteModal(false);
       setAlertToDelete(null);
     } catch (err) {
+      console.error('Error deleting alert:', err);
       setError(err.message);
     }
   };
 
-  if (!isLoggedIn) {
-    return null; // Or a loading state while redirecting
-  }
-
-  if (loading) {
+    if (loading) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
+        <p>{t('common.loading')}</p>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className={`alert-management-container ${isRTL ? 'rtl' : ''}`}>
+        <div className="alert-management-empty">
+          <div className="alert-management-empty-icon">
+            <Bell size={48} />
+          </div>
+          <h2 className="alert-management-title">{t('alerts.title')}</h2>
+          <p className="alert-management-empty-text">
+            {t('alerts.signInRequired')}
+          </p>
+          <button 
+            className="alert-management-btn-primary"
+            onClick={() => setShowAuthModal(true)}
+          >
+            {t('auth.login')}
+          </button>
+        </div>
+        {showAuthModal && (
+          <AuthModal 
+            mode="signIn" 
+            onClose={() => setShowAuthModal(false)}
+            onLoginSuccess={() => {
+              setShowAuthModal(false);
+              fetchAlerts();
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -162,7 +237,7 @@ const AlertManagement = () => {
   if (error) {
     return (
       <div className="error-container">
-        <div className="error-message">Error: {error}</div>
+        <div className="error-message">{t('common.error')}: {error}</div>
       </div>
     );
   }
@@ -201,50 +276,44 @@ const AlertManagement = () => {
           )}
         </div>
         <h3 className="alert-management-product-title">
-          {alert.productDetail?.title || `Product #${alert.product_id}`}
+          {alert.productDetail?.title || `${t('alerts.product')} #${alert.product_id}`}
         </h3>
       </div>
       
       <div className="alert-management-content">
         <div className="alert-management-price-section">
           <div className="alert-management-price-current">
-            <label className="alert-management-price-label">Current Price</label>
+            <label className="alert-management-price-label">{t('alerts.currentPrice')}</label>
             <span className="alert-management-price-value">
-              {alert.productDetail?.current_price || 'N/A'} SAR
+              {formatCurrency(alert.productDetail?.price || 0)}
             </span>
           </div>
           
           <div className="alert-management-price-threshold">
-            <label className="alert-management-price-label">Alert Price</label>
+            <label className="alert-management-price-label">{t('alerts.alertPrice')}</label>
             {editingAlert === alert.alert_id ? (
               <div className="alert-management-price-edit">
                 <input
-                key={`price-input-${alert.alert_id}`}
-                type="number"
-                value={newThresholdPrice}
-                onChange={(e) => {
+                  key={`price-input-${alert.alert_id}`}
+                  type="number"
+                  value={newThresholdPrice}
+                  onChange={(e) => {
                     const value = e.target.value;
                     if (value === '' || (!isNaN(value) && parseFloat(value) >= 0)) {
-                    setNewThresholdPrice(value);
+                      setNewThresholdPrice(value);
                     }
-                }}
-                onKeyDown={(e) => {
-                    // Allow backspace, delete, arrow keys, and numbers
-                    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
-                    if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key) && e.key !== '.') {
-                    e.preventDefault();
-                    }
-                }}
-                placeholder="New threshold"
-                className="alert-management-input"
-                autoFocus
-                min="0"
-                step="any"
+                  }}
+                  className="alert-management-input"
+                  autoFocus
+                  min="0"
+                  step="any"
+                  dir="ltr"
+                  placeholder={t('alerts.newThreshold')}
                 />
               </div>
             ) : (
               <span className="alert-management-price-value">
-                {alert.threshold_price} SAR
+                {formatCurrency(alert.threshold_price)}
               </span>
             )}
           </div>
@@ -257,7 +326,7 @@ const AlertManagement = () => {
                 className="alert-management-btn-save"
                 onClick={() => handleUpdateAlert(alert.alert_id)}
               >
-                Save
+                {t('common.save')}
               </button>
               <button 
                 className="alert-management-btn-cancel"
@@ -266,7 +335,7 @@ const AlertManagement = () => {
                   setNewThresholdPrice('');
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </>
           ) : (
@@ -278,7 +347,7 @@ const AlertManagement = () => {
                   setNewThresholdPrice(alert.threshold_price.toString());
                 }}
               >
-                Edit Alert
+                {t('alerts.editAlert')}
               </button>
               <button
                 className="alert-management-btn-delete"
@@ -287,7 +356,7 @@ const AlertManagement = () => {
                   setAlertToDelete(alert.alert_id);
                 }}
               >
-                Remove Alert
+                {t('alerts.removeAlert')}
               </button>
             </>
           )}
@@ -296,19 +365,11 @@ const AlertManagement = () => {
     </div>
   );
 
-
   return (
-    <div className="alert-management-container">
-      {showAuthModal && (
-        <AuthModal 
-          mode="signIn" 
-          onClose={() => setShowAuthModal(false)}
-          onLoginSuccess={handleLoginSuccess}
-        />
-      )}
+    <div className={`alert-management-container ${isRTL ? 'rtl' : ''}`}>
       <div className="alert-management-header">
         <div className="alert-management-header-content">
-          <h1 className="alert-management-title">My Price Alerts</h1>
+          <h1 className="alert-management-title">{t('alerts.myAlerts')}</h1>
           <ViewToggle />
         </div>
       </div>
@@ -319,13 +380,13 @@ const AlertManagement = () => {
             <Bell size={48} />
           </div>
           <p className="alert-management-empty-text">
-            You don't have any price alerts set up yet.
+            {t('alerts.noAlerts')}
           </p>
           <button 
             className="alert-management-btn-primary"
             onClick={() => navigate('/search')}
           >
-            Browse Products
+            {t('alerts.browseProducts')}
           </button>
         </div>
       ) : (
@@ -338,11 +399,10 @@ const AlertManagement = () => {
 
       {showDeleteModal && (
         <div className="alert-management-modal-overlay">
-          <div className="alert-management-modal">
-            <h2 className="alert-management-modal-title">Remove Price Alert</h2>
+          <div className={`alert-management-modal ${isRTL ? 'rtl' : ''}`}>
+            <h2 className="alert-management-modal-title">{t('alerts.removeAlertTitle')}</h2>
             <p className="alert-management-modal-text">
-              Are you sure you want to remove this price alert? 
-              You won't receive notifications for this product anymore.
+              {t('alerts.removeAlertConfirm')}
             </p>
             <div className="alert-management-modal-actions">
               <button 
@@ -352,13 +412,13 @@ const AlertManagement = () => {
                   setAlertToDelete(null);
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button 
                 className="alert-management-btn-delete"
                 onClick={() => handleDeleteAlert(alertToDelete)}
               >
-                Remove
+                {t('alerts.remove')}
               </button>
             </div>
           </div>

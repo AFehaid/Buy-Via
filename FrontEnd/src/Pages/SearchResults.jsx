@@ -6,15 +6,18 @@ import Jarir from '../assets/Jarir.png';
 import Extra from '../assets/Extra.png';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getCategoryList, getCategoryById } from '../Pages/categories';
 
 
-function valuetext(value) {
-    return `${value} SAR`;
-}
+
 
 const minDistance = 200;
-
+function valuetext(value) {
+    return `${value.toFixed(0)}`;
+}
 const SearchResults = () => {
+    const { language, t, formatCurrency } = useLanguage();
     const navigate = useNavigate();
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
@@ -37,111 +40,22 @@ const SearchResults = () => {
     const sar = ' SAR';
     const [showScrollTop, setShowScrollTop] = useState(false);
     const categoryId = queryParams.get('category_id') || 'all';
+    const [isStoresExpanded, setIsStoresExpanded] = useState(false);
 
     const stores = [
-        { id: 'all', name: 'All Stores' },
-        { id: '1', name: 'Amazon' },
-        { id: '2', name: 'Jarir' },
-        { id: '3', name: 'Extra' }
+        { id: 'all', translations: { en: 'All Stores', ar: 'جميع المتاجر' }, icon: null },
+        { id: '1', translations: { en: 'Amazon', ar: 'أمازون' }, icon: AMZN  },
+        { id: '2', translations: { en: 'Jarir', ar: 'جرير' }, icon: Jarir  },
+        { id: '3', translations: { en: 'Extra', ar: 'اكسترا' }, icon: Extra  }
     ];
 
-    const categories = [
-        {
-            header: 'Computers',
-            icon: '💻',
-            subcategories: [
-                { id: 1, name: 'Desktops & Workstations' },
-                { id: 2, name: 'Laptops & Notebooks' },
-                { id: 3, name: 'Tablets & E-Readers' },
-                { id: 6, name: 'Computer Components' },
-                { id: 7, name: 'Computer Peripherals' },
-                { id: 8, name: 'Networking Equipment' },
-                { id: 9, name: 'Printers & Scanners' },
-                { id: 11, name: 'Storage Devices' }
-            ]
-        },
-        {
-            header: 'Smartphones',
-            icon: '📱',
-            subcategories: [
-                { id: 4, name: 'Smartphones & Cell Phones' },
-                { id: 12, name: 'Wearable Technology' },
-                { id: 13, name: 'Phone Accessories' },
-                { id: 14, name: 'Device Accessories' }
-            ]
-        },
-        {
-            header: 'Home & Kitchen',
-            icon: '🏠',
-            subcategories: [
-                { id: 23, name: 'Home Appliances' },
-                { id: 24, name: 'Kitchen Appliances' },
-                { id: 25, name: 'Furniture & Home Decor' },
-                { id: 26, name: 'Home Improvement Tools' },
-                { id: 27, name: 'Home Security & Surveillance' }
-            ]
-        },
-        {
-            header: 'Entertainment',
-            icon: '🎮',
-            subcategories: [
-                { id: 19, name: 'Gaming Consoles' },
-                { id: 20, name: 'Handheld Gaming Devices' },
-                { id: 21, name: 'Gaming Accessories' },
-                { id: 22, name: 'Video Games' },
-                { id: 18, name: 'TV & Home Theater' },
-                { id: 17, name: 'Audio Equipment' }
-            ]
-        },
-        {
-            header: 'Fashion',
-            icon: '👗',
-            subcategories: [
-                { id: 28, name: 'Clothing' },
-                { id: 29, name: 'Shoes' },
-                { id: 30, name: 'Fashion Accessories' },
-                { id: 31, name: 'Jewelry' },
-                { id: 32, name: 'Beauty Products' },
-                { id: 33, name: 'Health & Wellness' },
-                { id: 34, name: 'Personal Care & Hygiene' }
-            ]
-        },
-        {
-            header: 'Sports',
-            icon: '🏀',
-            subcategories: [
-                { id: 35, name: 'Sports Equipment' },
-                { id: 36, name: 'Outdoor Gear' },
-                { id: 37, name: 'Fitness Equipment' }
-            ]
-        },
-        {
-            header: 'Other Categories',
-            icon: '📦',
-            subcategories: [
-                { id: 15, name: 'Cameras & Camcorders' },
-                { id: 16, name: 'Camera Accessories' },
-                { id: 38, name: 'Books & Magazines' },
-                { id: 39, name: 'Music & Musical Instruments' },
-                { id: 45, name: 'Toys & Games' },
-                { id: 49, name: 'Pet Supplies' },
-                { id: 50, name: 'Baby Products' },
-                { id: 51, name: 'Garden & Patio' },
-                { id: 52, name: 'Gift Cards & Vouchers' },
-                { id: 53, name: 'Smart Home Devices' }
-            ]
-        }
-    ];
+    const categories = getCategoryList(language);
 
     const getCategoryName = (categoryId) => {
-        for (const category of categories) {
-            const subcategory = category.subcategories.find(sub => sub.id === parseInt(categoryId));
-            if (subcategory) {
-                return subcategory.name;
-            }
-        }
-        return null;
+        const category = getCategoryById(categoryId, language);
+        return category ? category.subcategory : null;
     };
+
     const categoryName = getCategoryName(categoryId);
     
     const toggleFilters = () => {
@@ -154,6 +68,10 @@ const SearchResults = () => {
         return `${value}`;
     };
 
+    const getResultsText = (shown, total) => {
+        if (total === 0) return t('common.noResults');
+        return t('search.showing').replace('{{shown}}', shown).replace('{{total}}', total);
+    };
 
     useEffect(() => {
         setResults([]);
@@ -281,30 +199,30 @@ const fetchResults = useCallback(async () => {
     };
 
     return (
-        <div className="search-container">
+        <div className={`search-container ${language === 'ar' ? 'rtl' : ''}`}>
             <div className="filters-header" onClick={toggleFilters}>
-                <h3>Filters</h3>
+                <h3>{t('filters.title')}</h3>
                 <span className="dropdown-icon">{isFiltersCollapsed ? '+' : '−'}</span>
             </div>
 
             <div className={`filters-sidebar ${isFiltersCollapsed ? 'collapsed' : ''}`}>
                 <div className="filter-section">
-                    <h3>Sort By</h3>
+                    <h3 className="filter-title">{t('filters.sortBy')}</h3>
                     <select 
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value)}
                         className="sort-select"
                     >
-                        <option value="relevance">Relevance</option>
-                        <option value="price-low">Price: Low to High</option>
-                        <option value="price-high">Price: High to Low</option>
-                        <option value="newest">Newest First</option>
+                        <option value="relevance">{t('filters.relevance')}</option>
+                        <option value="price-low">{t('filters.priceLowToHigh')}</option>
+                        <option value="price-high">{t('filters.priceHighToLow')}</option>
+                        <option value="newest">{t('filters.newest')}</option>
                     </select>
                 </div>
 
                 <div className="filter-section">
-                    <h3>Price Range</h3>
-                    <Box sx={{ width: 210 }} marginLeft={'10px'}>
+                    <h3 className="filter-title">{t('filters.priceRange')}</h3>
+                    <Box  marginLeft={language === 'ar' ? '0' : '10px'} marginRight={language === 'ar' ? '10px' : '0'}>
                         <Slider
                             value={priceRange}
                             onChange={(e, newValue) => setPriceRange(newValue)}
@@ -312,37 +230,48 @@ const fetchResults = useCallback(async () => {
                             min={0}
                             max={5000}
                             step={100}
-                            valueLabelFormat={(value) => (value >= 5000 ? '5000+' : `${value}`)}
+                            valueLabelFormat={(value) => value >= 5000 ? '5000+' : value.toFixed(0)}
                             getAriaValueText={valuetext}
                         />
                     </Box>
                     <div className="price-range-display">
-                        <span>{priceRange[0]} SAR</span>
-                        <span>{priceRange[1]} SAR</span>
+                        <span>{formatCurrency(priceRange[0])}</span>
+                        <span>{formatCurrency(priceRange[1])}</span>
                     </div>
                 </div>
 
                 <div className="filter-section">
-                    <h3>Stores</h3>
-                    <div className="store-list">
-                        {stores.map((store) => (
-                            <label key={store.id} className="store-item">
-                                <input
-                                    type="radio"
-                                    name="store"
-                                    value={store.id}
-                                    checked={selectedStore === store.id}
-                                    onChange={() => setSelectedStore(store.id)}
-                                />
-                                <span>{store.name}</span>
-                            </label>
-                        ))}
+                    <div className="categories-header" onClick={() => setIsStoresExpanded(!isStoresExpanded)}>
+                        <h3 className="filter-title">{t('filters.stores')}</h3>
+                        <span className="dropdown-icon">{isStoresExpanded ? '−' : '+'}</span>
                     </div>
+                    {isStoresExpanded && (
+                        <div className="store-dropdown">
+                            {stores.map((store) => (
+                                <div
+                                    key={store.id}
+                                    className={`store-item ${selectedStore === store.id ? 'selected' : ''}`}
+                                    onClick={() => setSelectedStore(store.id)}
+                                >
+                                    <div className="store-item-content">
+                                        <span>{store.translations[language]}</span>
+                                        {store.icon && (
+                                            <img 
+                                                src={store.icon} 
+                                                alt={store.translations[language]}
+                                                className="store-icon" 
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="filter-section">
-                    <div className="categories-header" onClick={() => setIsCategoriesExpanded((prev) => !prev)}>
-                        <h3>Categories</h3>
+                    <div className="categories-header" onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}>
+                        <h3 className="filter-title">{t('filters.categories')}</h3>
                         <span className="dropdown-icon">{isCategoriesExpanded ? '−' : '+'}</span>
                     </div>
                     {isCategoriesExpanded && (
@@ -353,7 +282,7 @@ const fetchResults = useCallback(async () => {
                                         className="main-category-header"
                                         onClick={() => toggleMainCategory(category.header)}
                                     >
-                                        <span>{category.icon} {category.header}</span>
+                                        <span>{category.header}</span>
                                         <span className="dropdown-icon">
                                             {expandedMainCategories.includes(category.header) ? '−' : '+'}
                                         </span>
@@ -379,101 +308,105 @@ const fetchResults = useCallback(async () => {
             </div>
 
             <div className="main-content">
-                {query ? (
-                    <h1>Search Results for "{query}"</h1>
-                ) : categoryName ? (
-                    <h1>{categoryName}</h1>
-                ) : (
-                    <h1>All Products</h1>
-                )}
-                <p className="results-count">
-                    {totalResults > 0 ? `Showing ${results.length} of ${totalResults} results` : 'No results found'}
-                </p>
+                <div className="results-header">
+                    {query ? (
+                        <h1>{t('search.resultsFor').replace('{{query}}', query)}</h1>
+                    ) : categoryName ? (
+                        <h1>{categoryName}</h1>
+                    ) : (
+                        <h1>{t('search.allProducts')}</h1>
+                    )}
+                    <p className="results-count">
+                        {getResultsText(results.length, totalResults)}
+                    </p>
+                </div>
 
                 <div className="product-grid">
                 {results.map((result, index) => {
-    const isAvailable = result.availability && result.price !== null;
-    const priceClasses = isAvailable 
-        ? 'product-price available' 
-        : result.price !== null 
-            ? 'product-price unavailable' 
-            : 'price-not-available';
+                    const isAvailable = result.availability && result.price !== null;
+                    const priceClasses = isAvailable 
+                        ? 'product-price available' 
+                        : result.price !== null 
+                            ? 'product-price unavailable' 
+                            : 'price-not-available';
     
-    const calculateDiscount = (currentPrice, oldPrice) => {
-        if (!currentPrice || !oldPrice || oldPrice <= currentPrice) return null;
-        const discount = ((oldPrice - currentPrice) / oldPrice) * 100;
-        return discount >= 4 ? discount : null;
-    };
+                    const calculateDiscount = (currentPrice, oldPrice) => {
+                        if (!currentPrice || !oldPrice || oldPrice <= currentPrice) return null;
+                        const discount = ((oldPrice - currentPrice) / oldPrice) * 100;
+                        return discount >= 4 ? discount : null;
+                    };
 
-    const discount = result.last_old_price 
-        ? calculateDiscount(result.price, result.last_old_price)
-        : null;
-    
-    const productCard = (
-        <div 
-            key={result.product_id}
-            className="product-card"
-            onClick={() => handleProductClick(result.product_id)}
-        >
-            <div className="product-image-container">
-                <img 
-                    src={result.image_url} 
-                    alt={result.title}
-                    className="product-image"
-                />
-            </div>
-            <h3 className="product-title">{result.title}</h3>
-            <div className="product-info">
-                <div className="price-availability">
-                    <div className="price-container">
-                        {result.price !== null ? (
-                            <>
-                                <p className={priceClasses}>
-                                    {result.price.toFixed(2)}{sar}
-                                </p>
-                                {discount && (
-                                    <>
-                                        <span className="old-price">
-                                            {result.last_old_price.toFixed(2)}{sar}
-                                        </span>
-                                        <span className="discount-badge">
-                                            {discount.toFixed(0)}% OFF
-                                        </span>
-                                    </>
-                                )}
-                            </>
-                        ) : (
-                            <p className="price-not-available">Price not available</p>
+                    const discount = result.last_old_price 
+                        ? calculateDiscount(result.price, result.last_old_price)
+                        : null;
+                        
+                        const productCard = (
+                            <div 
+                                key={result.product_id}
+                                className="product-card"
+                                onClick={() => handleProductClick(result.product_id)}
+                            >
+                                <div className="product-image-container">
+                                    <img 
+                                        src={result.image_url} 
+                                        alt={result.title}
+                                        className="product-image"
+                                    />
+                                </div>
+                                <h3 className="product-title">{result.title}</h3>
+                                <div className="product-info">
+                                    <div className="price-availability">
+                                    <div className="price-container">
+                                        {result.price !== null ? (
+                                            <>
+                                                {discount && (
+                                                    <>
+                                                        <span className="old-price">
+                                                            {formatCurrency(result.last_old_price)}
+                                                        </span>
+                                                        <span className="discount-badge">
+                                                            {discount.toFixed(0)}% {language === 'ar' ? 'خصم' : 'OFF'}
+                                                        </span>
+                                                    </>
+                                                )}
+                                                <p className={priceClasses}>
+                                                    {formatCurrency(result.price)}
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <p className="price-not-available">
+                                                {language === 'ar' ? 'السعر غير متوفر' : 'Price not available'}
+                                            </p>
+                                        )}
+                                    </div>
+                                        {!isAvailable && result.price !== null && (
+                                            <span className="availability-status">Out of Stock</span>
+                                        )}
+                                    </div>
+                                    {result.store_id && (
+                                        <img 
+                                            src={getStoreIcon(result.store_id)} 
+                                            alt="Store" 
+                                            className="store-icon"
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        );
+
+                            if (results.length === index + 1) {
+                                return <div ref={lastProductRef} key={result.product_id}>{productCard}</div>;
+                            }
+                            return productCard;
+                        })}
+                </div>
+
+                        {loading && (
+                            <div className="loading-spinner">
+                                <div className="spinner"></div>
+                            </div>
                         )}
                     </div>
-                    {!isAvailable && result.price !== null && (
-                        <span className="availability-status">Out of Stock</span>
-                    )}
-                </div>
-                {result.store_id && (
-                    <img 
-                        src={getStoreIcon(result.store_id)} 
-                        alt="Store" 
-                        className="store-icon"
-                    />
-                )}
-            </div>
-        </div>
-    );
-
-    if (results.length === index + 1) {
-        return <div ref={lastProductRef} key={result.product_id}>{productCard}</div>;
-    }
-    return productCard;
-})}
-                </div>
-
-                {loading && (
-                    <div className="loading-spinner">
-                        <div className="spinner"></div>
-                    </div>
-                )}
-            </div>
             
             {showScrollTop && (
                 <button 

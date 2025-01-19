@@ -6,12 +6,16 @@ import Jarir from '../assets/Jarir.png';
 import Extra from '../assets/Extra.png';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getCategoryById } from '../Pages/categories';
 
 function valuetext(value) {
     return `${value} SAR`;
 }
 
 const CategoryProducts = () => {
+    const { language, t, formatCurrency } = useLanguage();
+    const [categoryName, setCategoryName] = useState('');
     const navigate = useNavigate();
     const location = useLocation();
     const { categoryId } = useParams(); // Get categoryId from URL params
@@ -28,12 +32,13 @@ const CategoryProducts = () => {
     const pageSize = 20;
     const sar = ' SAR';
     const [showScrollTop, setShowScrollTop] = useState(false);
+    const [isStoresExpanded, setIsStoresExpanded] = useState(false);
 
     const stores = [
-        { id: 'all', name: 'All Stores' },
-        { id: '1', name: 'Amazon' },
-        { id: '2', name: 'Jarir' },
-        { id: '3', name: 'Extra' }
+        { id: 'all', translations: { en: 'All Stores', ar: 'جميع المتاجر' }, icon: null },
+        { id: '1', translations: { en: 'Amazon', ar: 'أمازون' }, icon: AMZN  },
+        { id: '2', translations: { en: 'Jarir', ar: 'جرير' }, icon: Jarir  },
+        { id: '3', translations: { en: 'Extra', ar: 'اكسترا' }, icon: Extra  }
     ];
 
     const toggleFilters = () => {
@@ -46,6 +51,14 @@ const CategoryProducts = () => {
         setHasMore(true);
     }, [sortBy, selectedStore, priceRange[0], priceRange[1], categoryId]);
 
+    useEffect(() => {
+        if (categoryId) {
+            const category = getCategoryById(categoryId, language);
+            if (category) {
+                setCategoryName(category.subcategory);
+            }
+        }
+    }, [categoryId, language]);
     const fetchResults = useCallback(async () => {
         try {
             setLoading(true);
@@ -137,30 +150,30 @@ const CategoryProducts = () => {
     };
 
     return (
-        <div className="search-container">
+        <div className={`search-container ${language === 'ar' ? 'rtl' : ''}`}>
             <div className="filters-header" onClick={toggleFilters}>
-                <h3>Filters</h3>
+                <h3>{t('filters.title')}</h3>
                 <span className="dropdown-icon">{isFiltersCollapsed ? '+' : '−'}</span>
             </div>
-
+    
             <div className={`filters-sidebar ${isFiltersCollapsed ? 'collapsed' : ''}`}>
                 <div className="filter-section">
-                    <h3>Sort By</h3>
+                    <h3>{t('filters.sortBy')}</h3>
                     <select 
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value)}
                         className="sort-select"
                     >
-                        <option value="relevance">Relevance</option>
-                        <option value="price-low">Price: Low to High</option>
-                        <option value="price-high">Price: High to Low</option>
-                        <option value="newest">Newest First</option>
+                        <option value="relevance">{t('filters.relevance')}</option>
+                        <option value="price-low">{t('filters.priceLowToHigh')}</option>
+                        <option value="price-high">{t('filters.priceHighToLow')}</option>
+                        <option value="newest">{t('filters.newest')}</option>
                     </select>
                 </div>
-
+    
                 <div className="filter-section">
-                    <h3>Price Range</h3>
-                    <Box sx={{ width: 210 }} marginLeft={'10px'}>
+                    <h3>{t('filters.priceRange')}</h3>
+                    <Box sx={{ width: 210 }} marginLeft={language === 'ar' ? '0' : '10px'} marginRight={language === 'ar' ? '10px' : '0'}>
                         <Slider
                             value={priceRange}
                             onChange={(e, newValue) => setPriceRange(newValue)}
@@ -168,40 +181,56 @@ const CategoryProducts = () => {
                             min={0}
                             max={5000}
                             step={100}
-                            valueLabelFormat={value => value >= 5000 ? '5000+' : `${value}`}
+                            valueLabelFormat={value => value >= 5000 ? '5000+' : value.toFixed(0)}
                             getAriaValueText={valuetext}
                         />
                     </Box>
                     <div className="price-range-display">
-                        <span>{priceRange[0]} SAR</span>
-                        <span>{priceRange[1]} SAR</span>
+                        <span>{formatCurrency(priceRange[0])}</span>
+                        <span>{formatCurrency(priceRange[1])}</span>
                     </div>
                 </div>
-
+    
                 <div className="filter-section">
-                    <h3>Stores</h3>
-                    <div className="store-list">
-                        {stores.map((store) => (
-                            <label key={store.id} className="store-item">
-                                <input
-                                    type="radio"
-                                    name="store"
-                                    value={store.id}
-                                    checked={selectedStore === store.id}
-                                    onChange={() => setSelectedStore(store.id)}
-                                />
-                                <span>{store.name}</span>
-                            </label>
-                        ))}
+                    <div className="categories-header" onClick={() => setIsStoresExpanded(!isStoresExpanded)}>
+                        <h3 className="filter-title">{t('filters.stores')}</h3>
+                        <span className="dropdown-icon">{isStoresExpanded ? '−' : '+'}</span>
                     </div>
+                    {isStoresExpanded && (
+                        <div className="store-dropdown">
+                            {stores.map((store) => (
+                                <div
+                                    key={store.id}
+                                    className={`store-item ${selectedStore === store.id ? 'selected' : ''}`}
+                                    onClick={() => setSelectedStore(store.id)}
+                                >
+                                    <div className="store-item-content">
+                                        <span>{store.translations[language]}</span>
+                                        {store.icon && (
+                                            <img 
+                                                src={store.icon} 
+                                                alt={store.translations[language]}
+                                                className="store-icon" 
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
-
+    
             <div className="main-content">
-                <h1>{categoryId ? `Category Products` : 'All Products'}</h1>
-                <p className="results-count">
-                    {totalResults > 0 ? `Showing ${results.length} of ${totalResults} results` : 'No results found'}
+            <div className="results-header">
+                        <h1>{categoryName}</h1>
+
+                        <p className="results-count">
+                    {totalResults > 0 
+                        ? t('search.showing').replace('{{shown}}', results.length).replace('{{total}}', totalResults)
+                        : t('common.noResults')}
                 </p>
+                </div>
 
                 <div className="product-grid">
                     {results.map((result, index) => {
@@ -238,27 +267,29 @@ const CategoryProducts = () => {
                                 <h3 className="product-title">{result.title}</h3>
                                 <div className="product-info">
                                     <div className="price-availability">
-                                        <div className="price-container">
-                                            {result.price !== null ? (
-                                                <>
-                                                    <p className={priceClasses}>
-                                                        {result.price.toFixed(2)}{sar}
-                                                    </p>
-                                                    {discount && (
-                                                        <>
-                                                            <span className="old-price">
-                                                                {result.last_old_price.toFixed(2)}{sar}
-                                                            </span>
-                                                            <span className="discount-badge">
-                                                                {discount.toFixed(0)}% OFF
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <p className="price-not-available">Price not available</p>
-                                            )}
-                                        </div>
+                                    <div className="price-container">
+                                        {result.price !== null ? (
+                                            <>
+                                                {discount && (
+                                                    <>
+                                                        <span className="old-price">
+                                                            {formatCurrency(result.last_old_price)}
+                                                        </span>
+                                                        <span className="discount-badge">
+                                                            {discount.toFixed(0)}% {language === 'ar' ? 'خصم' : 'OFF'}
+                                                        </span>
+                                                    </>
+                                                )}
+                                                <p className={priceClasses}>
+                                                    {formatCurrency(result.price)}
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <p className="price-not-available">
+                                                {language === 'ar' ? 'السعر غير متوفر' : 'Price not available'}
+                                            </p>
+                                        )}
+                                    </div>
                                         {!isAvailable && result.price !== null && (
                                             <span className="availability-status">Out of Stock</span>
                                         )}

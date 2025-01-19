@@ -16,6 +16,8 @@ import ProductDetails from "./Pages/ProductDetails";
 import Footer from "./Components/Footer/Footer";
 import CategoryProducts from "./Pages/CategoryProducts";
 import AlertManagement from "./Pages/AlertManagement";
+import { LanguageProvider } from "./contexts/LanguageContext";
+import { AlertProvider } from "./contexts/AlertContext";
 
 
 
@@ -27,6 +29,8 @@ function App() {
     <div>
       
       <AuthProvider>
+        <LanguageProvider>
+          <AlertProvider>
       <Router>
       <Navbar />
       <main className="App-main">
@@ -47,7 +51,8 @@ function App() {
       </main>
 
       </Router>
-      </AuthProvider>
+      </AlertProvider>
+      </LanguageProvider>     </AuthProvider>
     </div> 
   );
 }

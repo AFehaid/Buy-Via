@@ -218,6 +218,70 @@
     font-weight: 600;
     margin-top: 4px;
 }
+/* RTL Support for Product Details */
+.container-details.rtl {
+    direction: rtl;
+}
+
+.rtl .product-description-details {
+    text-align: right;
+}
+
+.rtl .product-category-details {
+    letter-spacing: 0;
+}
+
+.rtl .product-title-details {
+    text-align: right;
+}
+
+.rtl .product-info-details {
+    text-align: right;
+}
+
+.rtl .price-section-details {
+    align-items: flex-end;
+}
+
+.rtl .product-price-details {
+    flex-direction: row;
+}
+
+.rtl .buy-button-details svg {
+    transform: scaleX(1);
+}
+
+.rtl .buy-button-details:hover svg {
+    transform: scaleX(1) translate(-100%);
+}
+
+.rtl .via-details {
+    right: 0;
+    left: auto;
+    transform: translateX(100%);
+}
+
+.rtl .buy-button-details:hover .via-details {
+    transform: translateX(-30px);
+}
+
+.rtl .buy-button-details:hover .buy-details {
+    transform: translateX(-200%);
+}
+
+/* Font adjustments for Arabic */
+.rtl .product-title-details {
+    font-size: 32px; /* Slightly smaller for Arabic text */
+    line-height: 1.4;
+}
+
+.rtl .product-info-details {
+    line-height: 1.8; /* Increased line height for Arabic */
+}
+
+.rtl .current-price-details {
+    font-size: 30px;
+}
 @media (max-width: 768px) {
     .container-details {
         flex-direction: column;
@@ -235,7 +299,22 @@
         align-items: flex-start;
         gap: 15px;
     }
+    .rtl .container-details {
+        padding: 15px;
+    }
 
+    .rtl .product-title-details {
+        font-size: 28px;
+    }
+
+    .rtl .product-price-details {
+        align-items: flex-end;
+    }
+
+    .rtl .buy-button-details {
+        width: 100%;
+        justify-content: center;
+    }
     .buy-button-details {
         width: 100%;
     }

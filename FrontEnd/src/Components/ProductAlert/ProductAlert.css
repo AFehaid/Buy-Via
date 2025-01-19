@@ -1,174 +1,366 @@
+/* Item Card Styles */
+.item-card {
+  position: relative;
+  width: 100%;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
 .item-image-container {
-    position: relative !important;
-    width: 100%;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 8px;
+  background-color: #f3f4f6;
+}
+
+.item-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+/* Container Styles */
+.pa-container {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.pa-rtl.pa-container {
+  right: auto;
+  left: 8px;
+}
+
+/* Button Styles */
+.pa-button {
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  pointer-events: auto;
+}
+
+.pa-button.pa-active {
+  background-color: rgba(255, 236, 236, 0.9);
+}
+
+.pa-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Spinner Styles */
+.pa-spinner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: pa-spin 1s linear infinite;
+  pointer-events: none;
+}
+
+.pa-active .pa-spinner {
+  border: 2px solid rgba(239, 68, 68, 0.2);
+  border-top-color: #ef4444;
+}
+
+@keyframes pa-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Success Toast Styles */
+.pa-success-toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #22c55e;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: pa-slide-down 0.3s ease;
+  z-index: 99999;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 300px;
+  justify-content: center;
+  pointer-events: none;
+}
+
+@keyframes pa-slide-down {
+  from {
+    transform: translate(-50%, -150%);
+  }
+  to {
+    transform: translate(-50%, 0);
+  }
+}
+
+.pa-success-icon {
+  font-size: 20px;
+}
+
+/* Modal Styles */
+.pa-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.pa-modal {
+  background-color: white;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: pa-fade-in 0.2s ease;
+  pointer-events: auto;
+}
+.pa-auth-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.pa-modal.pa-delete-mode {
+  border-top: 4px solid #ef4444;
+}
+
+@keyframes pa-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Form Styles */
+.pa-modal-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  text-align: center;
+  color: #1f2937;
+}
+
+.pa-delete-mode .pa-modal-title {
+  color: #ef4444;
+}
+
+.pa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pa-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pa-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.pa-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.pa-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Button Styles */
+.pa-button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.pa-submit-btn,
+.pa-delete-btn,
+.pa-cancel-btn {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.pa-submit-btn {
+  background-color: #3b82f6;
+}
+
+.pa-submit-btn:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.pa-delete-btn {
+  background-color: #ef4444;
+}
+
+.pa-delete-btn:hover {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+}
+
+.pa-cancel-btn {
+  background-color: #6b7280;
+}
+
+.pa-cancel-btn:hover {
+  background-color: #4b5563;
+  transform: translateY(-1px);
+}
+
+/* Delete Content Styles */
+.pa-delete-content {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.pa-delete-text {
+  color: #ef4444;
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+/* RTL Styles */
+.pa-rtl {
+  direction: rtl;
+}
+
+/* Desktop Hover States */
+@media (min-width: 768px) {
+  .pa-button {
+    opacity: 0;
   }
   
-  .product-alert-container {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    z-index: 2;
+  .item-image-container:hover .pa-button {
+    opacity: 1;
+  }
+
+  .pa-success-toast {
+    top: 80px; /* Adjusted for desktop navbar */
+  }
+}
+
+/* Mobile States */
+@media (max-width: 767px) {
+
+
+  .item-image-container:hover .pa-button,
+  .pa-button.pa-active {
+    opacity: 1;
   }
   
-  .product-alert-button {
-    background-color: rgba(255, 255, 255, 0.8);
-    border: none;
-    border-radius: 50%;
-    padding: 6px;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+  .pa-button {
+    opacity: 1 !important;
   }
   
-  /* Desktop - hide by default and show on hover */
-  @media (min-width: 768px) {
-    .product-alert-button {
-      opacity: 0;
-    }
-    
-    .item-image-container:hover .product-alert-button {
-      opacity: 1;
-    }
-  }
-  
-  /* Mobile - always show */
-  @media (max-width: 767px) {
-    .product-alert-button {
-      opacity: 1;
-    }
-  }
-  
-  .product-alert-button:hover {
-    background-color: rgba(255, 255, 255, 1);
-    transform: scale(1.05);
-  }
-  
-  .alert-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-  }
-  
-  .alert-popup {
-    background-color: white;
-    border-radius: 8px;
-    padding: 24px;
-    max-width: 400px;
+  .pa-success-toast {
+    top: 64px;
     width: 90%;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    animation: popupFadeIn 0.2s ease;
+    min-width: auto;
   }
-  
-  @keyframes popupFadeIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
+  /* Show button when image is touched (for touch devices) */
+  .item-image-container:active .pa-button {
+    opacity: 1;
   }
-  
-  .alert-title {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 16px;
-    text-align: center;
-    color: #1f2937;
-  }
-  
-  .alert-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  
-  .form-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #374151;
-  }
-  
-  .form-input {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    font-size: 14px;
-    transition: all 0.2s ease;
-  }
-  
-  .form-input:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-  }
-  
-  .button-container {
-    display: flex;
-    gap: 12px;
-    margin-top: 8px;
-  }
-  
-  .submit-button,
-  .cancel-button {
-    flex: 1;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    color: white;
-    font-weight: 500;
-  }
-  
-  .submit-button {
-    background-color: #3b82f6;
-  }
-  
-  .submit-button:hover {
-    background-color: #2563eb;
-    transform: translateY(-1px);
-  }
-  
-  .submit-button:active {
-    transform: translateY(0);
-  }
-  
-  .cancel-button {
-    background-color: #6b7280;
-  }
-  
-  .cancel-button:hover {
-    background-color: #4b5563;
-    transform: translateY(-1px);
-  }
-  
-  .cancel-button:active {
-    transform: translateY(0);
-  }
+}
+
+/* Hover Effects */
+.pa-button:not(:disabled):hover {
+  background-color: rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+}
+
+/* Active button animation */
+.pa-button:active {
+  transform: scale(0.95);
+}
+
+/* Animation for button hover ripple effect */
+.pa-submit-btn::before,
+.pa-delete-btn::before,
+.pa-cancel-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.pa-submit-btn:hover::before,
+.pa-delete-btn:hover::before,
+.pa-cancel-btn:hover::before {
+  transform: translateX(0);
+}
+
+/* Stop event propagation */
+.pa-button,
+.pa-modal-overlay,
+.pa-modal {
+  pointer-events: auto;
+}

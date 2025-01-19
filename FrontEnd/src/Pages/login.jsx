@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useAuth } from "../Components/Navbar/AuthProvider";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../contexts/LanguageContext";
 import "../Pages/login.css";
 
 const AuthModal = ({ mode, onClose }) => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t, isRTL } = useLanguage();
   const [activeForm, setActiveForm] = useState(mode);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -34,14 +36,13 @@ const AuthModal = ({ mode, onClose }) => {
       if (activeForm === "signIn") {
         const result = await login(formData.username, formData.password);
         if (result) {
-          setSuccess("Logged in successfully!");
+          setSuccess(t('auth.loginSuccess'));
           onClose();
-          // Force a single reload after successful login
           window.location.reload();
         }
       } else if (activeForm === "signUp") {
         if (formData.password !== formData.confirmPassword) {
-          setError("Passwords do not match.");
+          setError(t('auth.passwordsMismatch'));
           return;
         }
 
@@ -58,17 +59,17 @@ const AuthModal = ({ mode, onClose }) => {
         });
 
         if (response.ok) {
-          setSuccess("Account created successfully! Please sign in.");
+          setSuccess(t('auth.registrationSuccess'));
           setActiveForm("signIn");
-          setFormData({ username: "", email: "", password: "", confirmPassword: "" }); // Clear form
+          setFormData({ username: "", email: "", password: "", confirmPassword: "" });
         } else {
           const errorData = await response.json();
-          setError(errorData.detail || "Registration failed. Please try again.");
+          setError(errorData.detail || t('auth.registrationFailed'));
         }
       }
     } catch (err) {
       console.error("Error during login/registration:", err);
-      setError("An error occurred. Please try again.");
+      setError(t('auth.generalError'));
     }
   };
 
@@ -80,22 +81,23 @@ const AuthModal = ({ mode, onClose }) => {
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
-      <div className="auth-container">
+      <div className={`auth-container ${isRTL ? 'rtl' : ''}`}>
         <button className="close-button" onClick={onClose}>×</button>
-        <h2>Welcome to Buy Via</h2>
-        <p>Your ultimate AI-driven price comparison platform</p>
+        <h2>{t('auth.welcome')}</h2>
+        <p>{t('auth.subtitle')}</p>
+        
         <div className="form-toggle">
           <button
             className={`toggle-button ${activeForm === "signIn" ? "active" : ""}`}
             onClick={() => setActiveForm("signIn")}
           >
-            Sign In
+            {t('auth.login')}
           </button>
           <button
             className={`toggle-button ${activeForm === "signUp" ? "active" : ""}`}
             onClick={() => setActiveForm("signUp")}
           >
-            Sign Up
+            {t('auth.signup')}
           </button>
         </div>
 
@@ -107,20 +109,24 @@ const AuthModal = ({ mode, onClose }) => {
             <input
               type="text"
               name="username"
-              placeholder="Username"
+              placeholder={t('auth.usernamePlaceholder')}
               value={formData.username}
               onChange={handleInputChange}
               required
+              dir={isRTL ? "rtl" : "ltr"}
             />
             <input
               type="password"
               name="password"
-              placeholder="Password"
+              placeholder={t('auth.passwordPlaceholder')}
               value={formData.password}
               onChange={handleInputChange}
               required
+              dir={isRTL ? "rtl" : "ltr"}
             />
-            <button type="submit" className="form-submit">Sign In</button>
+            <button type="submit" className="form-submit">
+              {t('auth.login')}
+            </button>
           </form>
         )}
 
@@ -129,36 +135,42 @@ const AuthModal = ({ mode, onClose }) => {
             <input
               type="text"
               name="username"
-              placeholder="Username"
+              placeholder={t('auth.usernamePlaceholder')}
               value={formData.username}
               onChange={handleInputChange}
               required
+              dir={isRTL ? "rtl" : "ltr"}
             />
             <input
               type="email"
               name="email"
-              placeholder="Email"
+              placeholder={t('auth.emailPlaceholder')}
               value={formData.email}
               onChange={handleInputChange}
               required
+              dir={isRTL ? "rtl" : "ltr"}
             />
             <input
               type="password"
               name="password"
-              placeholder="Password"
+              placeholder={t('auth.passwordPlaceholder')}
               value={formData.password}
               onChange={handleInputChange}
               required
+              dir={isRTL ? "rtl" : "ltr"}
             />
             <input
               type="password"
               name="confirmPassword"
-              placeholder="Confirm Password"
+              placeholder={t('auth.confirmPasswordPlaceholder')}
               value={formData.confirmPassword}
               onChange={handleInputChange}
               required
+              dir={isRTL ? "rtl" : "ltr"}
             />
-            <button type="submit" className="form-submit">Sign Up</button>
+            <button type="submit" className="form-submit">
+              {t('auth.signup')}
+            </button>
           </form>
         )}
       </div>

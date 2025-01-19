@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../contexts/LanguageContext";
 import "./HorizontalScrollView.css";
 import Jarir from "../../assets/Jarir.png";
 import Extra from "../../assets/Extra.png";
@@ -40,15 +41,16 @@ const HorizontalScrollView = ({ prompt }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [totalResults, setTotalResults] = useState(0);
-  const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
+  const { t, formatCurrency, isRTL } = useLanguage();
 
   useEffect(() => {
     const fetchItems = async () => {
       setLoading(true);
       setError(null);
       try {
-        const url = `http://localhost:8000/search?query=${encodeURIComponent(prompt)}&page=1&page_size=20&sort_by=relevance&min_price=1000&in_stock_only=true`;
+        const url = `http://localhost:8000/search/quick-search?query=${encodeURIComponent(prompt)}`;
         
         const data = await queueRequest(url);
 
@@ -99,7 +101,7 @@ const HorizontalScrollView = ({ prompt }) => {
 
   const formatPrice = (item) => {
     if (item.price === null) {
-      return <span className="available">Price not available</span>;
+      return <span className="available">{t('common.priceNotAvailable')}</span>;
     }
 
     const discount = item.last_old_price 
@@ -108,11 +110,17 @@ const HorizontalScrollView = ({ prompt }) => {
 
     return (
       <div className="price-content">
-        <span className="current-price">{item.price.toFixed(2)} SAR</span>
+        <span className="current-price" dir={isRTL ? 'rtl' : 'ltr'}>
+          {formatCurrency(item.price)}
+        </span>
         {discount && (
           <>
-            <span className="old-price">{item.last_old_price.toFixed(2)} SAR</span>
-            <span className="discount-badge">{discount.toFixed(0)}% OFF</span>
+            <span className="old-price" dir={isRTL ? 'rtl' : 'ltr'}>
+              {formatCurrency(item.last_old_price)}
+            </span>
+            <span className="discount-badge">
+              {discount.toFixed(0)}% {t('common.off')}
+            </span>
           </>
         )}
       </div>
@@ -122,13 +130,13 @@ const HorizontalScrollView = ({ prompt }) => {
   if (error) {
     return (
       <div className="error-container">
-        <p className="error-message">Failed to load products. Please try again later.</p>
+        <p className="error-message">{t('common.errorLoading')}</p>
       </div>
     );
   }
 
   return (
-    <div className="horizontal-scroll-view">
+    <div className={`horizontal-scroll-view ${isRTL ? 'rtl' : ''}`}>
       <div 
         className="prompt-container"
         onClick={handleShowMore}
@@ -139,7 +147,7 @@ const HorizontalScrollView = ({ prompt }) => {
           {prompt}
         </h2>
         <h2 className={`prompt-text hover ${isHovered ? 'show' : 'hide'}`}>
-          Show More
+          {t('common.showMore')}
         </h2>
       </div>
       
@@ -147,11 +155,11 @@ const HorizontalScrollView = ({ prompt }) => {
         <div className="loading-container1">
           <div className="loading-spinner1">
             <div className="spinner-ring"></div>
-            <p>Loading products...</p>
+            <p>{t('common.loading')}</p>
           </div>
         </div>
       ) : items.length > 0 ? (
-        <div className="scroll-container">
+        <div className={`scroll-container ${isRTL ? 'rtl-scroll' : ''}`}>
           {items.map((item) => (
             <div 
               key={item.product_id} 
@@ -160,7 +168,7 @@ const HorizontalScrollView = ({ prompt }) => {
             >
               <div className="item-image-container">
                 <img src={item.image_url} alt={item.title} loading="lazy" />
-                <ProductAlert />
+                <ProductAlert productId={item.product_id} currentPrice={item.price} />
               </div>
               <h3>{item.title}</h3>
               <div className="item-footer">
@@ -171,7 +179,7 @@ const HorizontalScrollView = ({ prompt }) => {
                   <img 
                     className="store-icon" 
                     src={getStoreIcon(item.store_id)} 
-                    alt="Store logo" 
+                    alt={t('common.storeLogo')} 
                   />
                 )}
               </div>
@@ -180,7 +188,7 @@ const HorizontalScrollView = ({ prompt }) => {
         </div>
       ) : (
         <div className="no-results">
-          <p>No products found for "{prompt}"</p>
+          <p>{t('search.noResults').replace('{query}', prompt)}</p>
         </div>
       )}
     </div>
