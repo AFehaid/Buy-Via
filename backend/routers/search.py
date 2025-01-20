@@ -1,12 +1,19 @@
 from typing import List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, asc, desc, case
+from sqlalchemy.orm import Session, joinedload, aliased
+from sqlalchemy import or_, and_, asc, desc, case
 from pydantic import BaseModel
 
-from models import Product, ProductPriceHistory, SearchHistory, UserRecommendation
+from models import (
+    Product,
+    ProductTitleTranslation,
+    ProductPriceHistory,
+    SearchHistory,
+    UserRecommendation
+)
 from dependencies.deps import get_db, get_current_user, get_optional_current_user
 from fastapi.security import OAuth2PasswordBearer
+
 
 # ----------------------------------------
 # 1) Define your accessories search dict
@@ -43,13 +50,10 @@ accessories_search_keywords = {
     ]
 }
 
-# ----------------------------------------
-# Flatten all accessory words into one list (lowercased)
-# ----------------------------------------
+# Flatten accessory words for detection
 all_accessories = []
 for category_list in accessories_search_keywords.values():
     for item in category_list:
-        # ensure we handle them case-insensitively
         all_accessories.append(item.lower())
 
 
@@ -68,6 +72,7 @@ class ProductResponse(BaseModel):
     last_old_price: float | None
     category_id: int
     group_id: int | None
+    arabic_title: Optional[str] = None  # <--- NEW FIELD
 
     class Config:
         from_attributes = True
@@ -83,49 +88,77 @@ class SearchResponse(BaseModel):
 # ----------------------------------------
 def get_search_query(db: Session, query: str, sort_by: str):
     """
-    Build the search query while carefully handling short tokens.
+    Build the search query while carefully handling short tokens
+    and also checking Arabic titles in the translations table.
     """
-    words = query.lower().split()  # Split query into words
+    # We'll do an OUTER JOIN on ProductTitleTranslation (language='ar')
+    # so we can search in Arabic translations as well.
+    ar_trans = aliased(ProductTitleTranslation)
 
+    # Prepare (condition, weight) pairs for multi-word search
+    words = query.lower().split()
     conditions = []
-    # Full-query match
-    conditions.append((Product.title.ilike(f"%{query}%"), 3.0))
-    
-    # Handle longer words normally
-    for word in words:
-        if len(word) > 1:  # Longer words
-            conditions.append((Product.title.ilike(f"%{word}%"), 2.0))
-        else:  # Single-character words
-            conditions.append((
-                Product.title.ilike(f"{word} %") |  # Start of word
-                Product.title.ilike(f"% {word}") |  # End of word
-                Product.title.ilike(f"% {word} %"),  # Middle of word
-                1.5
-            ))
 
-    # Accessory condition (push accessories lower if not in query)
-    from sqlalchemy import case as sql_case, or_
+    # Full-query match (title OR arabic_translation)
+    full_condition = or_(
+        Product.title.ilike(f"%{query}%"),
+        and_(ar_trans.language == "ar", ar_trans.translated_title.ilike(f"%{query}%"))
+    )
+    conditions.append((full_condition, 3.0))
+
+    # Word-by-word match
+    for word in words:
+        if len(word) > 1:
+            # multi-char
+            cond = or_(
+                Product.title.ilike(f"%{word}%"),
+                and_(ar_trans.language == "ar", ar_trans.translated_title.ilike(f"%{word}%"))
+            )
+            conditions.append((cond, 2.0))
+        else:
+            # single-char
+            cond = or_(
+                Product.title.ilike(f"{word} %"),
+                Product.title.ilike(f"% {word}"),
+                Product.title.ilike(f"% {word} %"),
+                and_(
+                    ar_trans.language == "ar",
+                    or_(
+                        ar_trans.translated_title.ilike(f"{word} %"),
+                        ar_trans.translated_title.ilike(f"% {word}"),
+                        ar_trans.translated_title.ilike(f"% {word} %")
+                    )
+                )
+            )
+            conditions.append((cond, 1.5))
+
+    # Accessory condition => push accessories lower if not in query
     accessory_condition = or_(
         *[Product.title.ilike(f"%{acc_keyword}%") for acc_keyword in all_accessories]
     )
-    is_accessory_expr = sql_case(
+    is_accessory_expr = case(
         (accessory_condition, 1),
         else_=0
     ).label("is_accessory")
 
-    # Relevance score
+    # Build relevance score
     relevance_score = sum(
-        sql_case((cond, weight), else_=0.0)
+        case((cond, weight), else_=0.0)
         for cond, weight in conditions
     ).label("relevance")
 
-    # Query base
+    # Combine all positive conditions with OR
     positive_conditions = [cond for cond, weight in conditions if weight > 0]
-    combined_query = db.query(
-        Product,
-        relevance_score.label("relevance"),
-        is_accessory_expr.label("is_accessory")
-    ).filter(or_(*positive_conditions))
+
+    combined_query = (
+        db.query(
+            Product,
+            relevance_score.label("relevance"),
+            is_accessory_expr.label("is_accessory")
+        )
+        .outerjoin(ar_trans, ar_trans.product_id == Product.product_id)
+        .filter(or_(*positive_conditions))  # overall OR for the conditions
+    )
 
     # Sorting logic
     if sort_by == "relevance":
@@ -148,8 +181,8 @@ def get_search_query(db: Session, query: str, sort_by: str):
             desc(Product.last_updated)
         )
 
+    # Return only rows where relevance > 0
     return combined_query.filter(relevance_score > 0)
-
 
 
 # ----------------------------------------
@@ -174,7 +207,14 @@ def get_price_history(db: Session, product_ids: List[int]) -> Dict[int, float]:
 # Utility: format_product_response
 # ----------------------------------------
 def format_product_response(product: Product, last_old_price: float = None) -> dict:
-    """Format single product response"""
+    """Return product data + arabic title if present."""
+    # Find Arabic translation
+    arabic_title = None
+    for t in product.translations:
+        if t.language == "ar":
+            arabic_title = t.translated_title
+            break
+
     return {
         "product_id": product.product_id,
         "title": product.title,
@@ -186,7 +226,8 @@ def format_product_response(product: Product, last_old_price: float = None) -> d
         "availability": product.availability,
         "category_id": product.category_id,
         "last_old_price": last_old_price,
-        "group_id": product.group_id
+        "group_id": product.group_id,
+        "arabic_title": arabic_title  # None if no Arabic translation
     }
 
 
@@ -194,23 +235,13 @@ def format_product_response(product: Product, last_old_price: float = None) -> d
 # Round-robin reorder by store_id
 # ----------------------------------------
 def reorder_by_store_round_robin(products: List[Product]) -> List[Product]:
-    """
-    Takes the final sorted list of products (already sorted by relevance, is_accessory, etc.),
-    and rearranges them so that store IDs cycle in ascending order:
-      store 1, store 2, store 3, store 1, store 2, store 3, ...
-    This preserves the internal order of products within each store.
-    """
     from collections import OrderedDict
-
-    # 1) Figure out which store_ids are present, in ascending order
     store_ids = sorted({p.store_id for p in products})
-
-    # 2) Group products by store_id in the order they appear
     store_map = OrderedDict((sid, []) for sid in store_ids)
+
     for prod in products:
         store_map[prod.store_id].append(prod)
 
-    # 3) Round-robin: pick the first item from store 1, then store 2, etc.
     final_list = []
     while True:
         all_empty = True
@@ -231,9 +262,8 @@ router = APIRouter(prefix="/search", tags=["search"])
 
 
 # ----------------------------------------
-# GET /search
+# GET /search/quick-search
 # ----------------------------------------
-
 @router.get("/quick-search", response_model=SearchResponse)
 def quick_search(
     query: str = Query(..., min_length=1, description="Search query"),
@@ -245,133 +275,121 @@ def quick_search(
     - Fixed page size of 20.
     - Sorted by relevance.
     """
-    # Build the base search query, sorted by relevance
     combined_query = get_search_query(db, query, sort_by="relevance")
 
-    # Only in-stock products
+    # Only in-stock
     combined_query = combined_query.filter(Product.availability == True)
 
-    # Count total (for completeness in response)
     total = combined_query.count()
 
-    # Limit to 20 items (fixed page size)
     results = combined_query.limit(20).all()
     if not results:
         raise HTTPException(status_code=404, detail="No products found matching the query")
 
-    # Extract just the Product objects from the query results
     products_only = [row[0] for row in results]
 
-    # Reorder products in round-robin order by store_id
     reordered_products = reorder_by_store_round_robin(products_only)
-
-    # Get price history
-    product_ids = [product.product_id for product in reordered_products]
+    product_ids = [p.product_id for p in reordered_products]
     last_old_prices = get_price_history(db, product_ids)
 
-    # Format the products for the response
     products_response = [
-        format_product_response(product, last_old_prices.get(product.product_id))
-        for product in reordered_products
+        format_product_response(prod, last_old_prices.get(prod.product_id))
+        for prod in reordered_products
     ]
-
     return SearchResponse(total=total, products=products_response)
 
 
+# ----------------------------------------
+# GET /search/recommendations
+# ----------------------------------------
 @router.get("/recommendations", response_model=List[ProductResponse])
 def get_user_recommendations(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),  # Use the updated dependency
+    current_user: dict = Depends(get_current_user),
 ):
-    """
-    Fetch and return recommended products for the logged-in user, sorted by priority.
-    """
     user_id = current_user["id"]
 
-    # Fetch recommendations, sorted by priority
+    # Get recommendations
     recommendations = (
         db.query(UserRecommendation)
         .filter(UserRecommendation.user_id == user_id)
         .join(Product, UserRecommendation.product_id == Product.product_id)
+        .options(joinedload(UserRecommendation.product).joinedload(Product.translations))
         .order_by(UserRecommendation.priority_score.desc())
         .limit(20)
         .all()
     )
-
     if not recommendations:
         raise HTTPException(status_code=404, detail="No recommendations found")
 
-    # Extract product IDs and fetch price history
     product_ids = [rec.product.product_id for rec in recommendations]
     last_old_prices = get_price_history(db, product_ids)
 
-    # Format response
     return [
         format_product_response(rec.product, last_old_prices.get(rec.product.product_id))
         for rec in recommendations
     ]
 
+
+# ----------------------------------------
+# GET /search/related-products
+# ----------------------------------------
 @router.get("/related-products", response_model=List[ProductResponse])
 def get_related_products(
     group_id: Optional[int] = Query(None, description="The group ID of the product"),
     category_id: int = Query(..., description="The category ID of the product"),
-    limit: int = Query(20, ge=1, le=100, description="Maximum number of related products to fetch"),
+    limit: int = Query(20, ge=1, le=100, description="Max related products"),
     db: Session = Depends(get_db),
 ):
-    """
-    Fetch related products based on `group_id`. If the group has too few products,
-    fallback to fetching products based on `category_id`.
-    """
-    # Query products for the given group_id (if provided)
-    group_products_query = db.query(Product).filter(Product.group_id == group_id) if group_id else None
+    if group_id:
+        group_products_query = db.query(Product).filter(Product.group_id == group_id)
+        group_products_query = group_products_query.options(joinedload(Product.translations))
+        group_products = group_products_query.limit(limit).all()
+    else:
+        group_products = []
 
-    # Fetch products in the group if group_id is provided
-    group_products = group_products_query.limit(limit).all() if group_id else []
-
-    # If products in the group are less than the limit, fetch more from the same category
     if len(group_products) < limit:
-        remaining_limit = limit - len(group_products)
-        category_products_query = db.query(Product).filter(
-            Product.category_id == category_id
-        )
+        remaining = limit - len(group_products)
+        category_products_query = db.query(Product).filter(Product.category_id == category_id)
         if group_id:
-            category_products_query = category_products_query.filter(Product.group_id != group_id)  # Exclude the group
-        category_products = category_products_query.limit(remaining_limit).all()
+            category_products_query = category_products_query.filter(Product.group_id != group_id)
+        category_products_query = category_products_query.options(joinedload(Product.translations))
+        category_products = category_products_query.limit(remaining).all()
     else:
         category_products = []
 
-    # Combine the results, keeping group products first
     all_products = group_products + category_products
-
-    # Format response
-    product_ids = [product.product_id for product in all_products]
+    product_ids = [p.product_id for p in all_products]
     last_old_prices = get_price_history(db, product_ids)
 
     return [
-        format_product_response(product, last_old_prices.get(product.product_id))
-        for product in all_products
+        format_product_response(prod, last_old_prices.get(prod.product_id))
+        for prod in all_products
     ]
 
+
+# ----------------------------------------
+# GET /search/category-products
+# ----------------------------------------
 @router.get("/category-products", response_model=SearchResponse)
 def search_products_by_category(
-    category_id: int = Query(..., description="Category ID to fetch products for"),
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(10, ge=1, le=100, description="Number of items per page"),
-    sort_by: Optional[str] = Query("relevance", description="Sort by: relevance, price-low, price-high, newest"),
-    min_price: Optional[float] = Query(None, description="Minimum price filter"),
-    max_price: Optional[float] = Query(None, description="Maximum price filter"),
-    store_filter: Optional[int] = Query(None, description="Filter by store ID"),
-    in_stock_only: bool = Query(False, description="Filter by availability"),
+    category_id: int,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    sort_by: Optional[str] = Query("relevance"),
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    store_filter: Optional[int] = None,
+    in_stock_only: bool = False,
     db: Session = Depends(get_db),
-    current_user: Optional[dict] = Depends(get_optional_current_user),  # Optional dependency
+    current_user: Optional[dict] = Depends(get_optional_current_user),
 ):
     """
     Fetch products for a specific category with optional filters and sorting.
     """
-    # Start query to fetch products by category_id
     query = db.query(Product).filter(Product.category_id == category_id)
+    query = query.options(joinedload(Product.translations))
 
-    # Apply filters
     if min_price is not None:
         query = query.filter(Product.price >= min_price)
     if max_price is not None:
@@ -381,58 +399,55 @@ def search_products_by_category(
     if in_stock_only:
         query = query.filter(Product.availability == True)
 
-    # Apply sorting
+    # Sorting
     if sort_by == "price-low":
         query = query.order_by(Product.price.asc())
     elif sort_by == "price-high":
         query = query.order_by(Product.price.desc())
     elif sort_by == "newest":
         query = query.order_by(Product.last_updated.desc())
+    # If 'relevance', there's no text search here, so no effect.
 
-    # Count total results for pagination
     total_results = query.count()
 
-    # Apply pagination
     offset = (page - 1) * page_size
     products = query.offset(offset).limit(page_size).all()
-
-    # Handle case where no products are found
     if not products:
         raise HTTPException(status_code=404, detail="No products found for the given category.")
 
-    # Get price history for the products
-    product_ids = [product.product_id for product in products]
+    product_ids = [p.product_id for p in products]
     last_old_prices = get_price_history(db, product_ids)
 
-    # Format products for response
     response_products = [
-        format_product_response(product, last_old_prices.get(product.product_id))
-        for product in products
+        format_product_response(prod, last_old_prices.get(prod.product_id))
+        for prod in products
     ]
 
     return SearchResponse(total=total_results, products=response_products)
 
 
+# ----------------------------------------
+# GET /search
+# ----------------------------------------
 @router.get("/", response_model=SearchResponse)
 def search_products(
     query: str = Query(..., min_length=1, description="Search query"),
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
     sort_by: Optional[str] = Query("relevance", description="Sort by: relevance, price-low, price-high, newest"),
-    min_price: Optional[float] = Query(None, description="Minimum price filter"),
-    max_price: Optional[float] = Query(None, description="Maximum price filter"),
-    store_filter: Optional[int] = Query(None, description="Filter by store ID"),
-    category_id: Optional[int] = Query(None, description="Filter by category ID"),
-    in_stock_only: bool = Query(False, description="Filter by availability"),
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    store_filter: Optional[int] = None,
+    category_id: Optional[int] = None,
+    in_stock_only: bool = False,
     db: Session = Depends(get_db),
-    current_user: Optional[dict] = Depends(get_optional_current_user),  # Optional dependency
+    current_user: Optional[dict] = Depends(get_optional_current_user),
 ):
     """
-    Search products with optional category filter
+    Search products with optional category filter, plus Arabic support.
     """
     combined_query = get_search_query(db, query, sort_by)
 
-    # Apply filters
     if store_filter is not None:
         combined_query = combined_query.filter(Product.store_id == store_filter)
     if category_id is not None:
@@ -444,40 +459,36 @@ def search_products(
     if in_stock_only:
         combined_query = combined_query.filter(Product.availability == True)
 
-    # Count and paginate
     total = combined_query.count()
     offset = (page - 1) * page_size
+
     paginated_results = combined_query.offset(offset).limit(page_size).all()
     if not paginated_results:
         raise HTTPException(status_code=404, detail="No products found matching the query")
 
-    products_only = [result[0] for result in paginated_results]
+    # Extract Product objects
+    products_only = [r[0] for r in paginated_results]
 
-    # Reorder by store (if needed)
+    # Round-robin reorder
     reordered = reorder_by_store_round_robin(products_only)
-
-    # Get price history
     product_ids = [p.product_id for p in reordered]
     last_old_prices = get_price_history(db, product_ids)
 
-    # Log the user's search only if authenticated
+    # Log search if user is authenticated
     if current_user:
         search_history_entry = SearchHistory(
             user_id=current_user["id"],
-            search_value=query or None,  # Use query if provided, otherwise set as NULL
+            search_value=query,
         )
         db.add(search_history_entry)
         db.commit()
 
-
-    # Format response
     products = [
-        format_product_response(product, last_old_prices.get(product.product_id))
-        for product in reordered
+        format_product_response(prod, last_old_prices.get(prod.product_id))
+        for prod in reordered
     ]
 
     return SearchResponse(total=total, products=products)
-
 
 
 # ----------------------------------------
@@ -485,25 +496,30 @@ def search_products(
 # ----------------------------------------
 @router.get("/{product_id}", response_model=ProductResponse)
 def get_product(
-    product_id: int = Path(..., description="The ID of the product to retrieve"),
+    product_id: int,
     db: Session = Depends(get_db),
-    current_user: Optional[dict] = Depends(get_optional_current_user),  # Optional dependency
+    current_user: Optional[dict] = Depends(get_optional_current_user),
 ):
     """
-    Get a single product by ID and log the view (if authenticated).
+    Get a single product by ID, including Arabic title if available,
+    and log the view if authenticated.
     """
-    product = db.query(Product).filter(Product.product_id == product_id).first()
+    product = (
+        db.query(Product)
+        .filter(Product.product_id == product_id)
+        .options(joinedload(Product.translations))
+        .first()
+    )
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
     last_old_prices = get_price_history(db, [product_id])
     last_old_price = last_old_prices.get(product_id)
 
-    # Log product view for signed-in user without defaulting search_value
     if current_user:
         view_history_entry = SearchHistory(
             user_id=current_user["id"],
-            product_id=product_id,  # Link to the product without a search_value
+            product_id=product_id,
         )
         db.add(view_history_entry)
         db.commit()
