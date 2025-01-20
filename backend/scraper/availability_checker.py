@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 from scraper.scraper import AmazonScraper, JarirScraper, ExtraScraper
 from models import Product, Store, ProductPriceHistory, engine
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from collections import defaultdict
 
 class AvailabilityChecker:
@@ -21,7 +21,10 @@ class AvailabilityChecker:
     def check_store_availability(self, store_name, products):
         """
         Check availability for a chunk of products from a specific store and update the database.
-        Then delete any product that has been unavailable for >=2 weeks.
+        
+        Changes in this version:
+          - No product deletion.
+          - If the scraped price is None, keep the old price in the DB.
         """
         scraper_class = self.scrapers.get(store_name)
         if not scraper_class:
@@ -32,47 +35,53 @@ class AvailabilityChecker:
         scraper = scraper_class(store_name)
         scraper.driver = scraper.setup_driver()  # Ensure driver is set up
 
-        # Create a new session for DB updates
         with Session(engine) as db:
             try:
                 for product in products:
                     try:
-                        # --- A) SCRAPE AVAILABILITY & PRICE ---
+                        # --- (A) SCRAPE AVAILABILITY & PRICE ---
                         scraped_info = scraper.scrape_availability(product.link)
-                        new_availability = scraped_info.get("availability", False)
-                        new_price_str = scraped_info.get("price", "N/A")
 
-                        # Convert price if possible
+                        # Fallbacks
+                        new_availability = False
                         new_price = None
-                        if new_price_str != "N/A":
-                            try:
-                                new_price = float(new_price_str)
-                            except ValueError:
-                                new_price = None
 
-                        # --- B) UPDATE FIELDS ---
+                        if scraped_info:
+                            new_availability = scraped_info.get("availability", False)
+                            new_price_str = scraped_info.get("price", "N/A")
+                            if new_price_str != "N/A":
+                                try:
+                                    new_price = float(new_price_str)
+                                except ValueError:
+                                    new_price = None
+
+                        # --- (B) UPDATE FIELDS ---
                         old_availability = product.availability
                         old_price = product.price
 
+                        # Always set the new availability (even if price is None)
                         product.availability = new_availability
 
-                        # Price logic
                         price_changed = False
                         price_message = "price not change"
+
                         if new_price is not None:
+                            # We got a valid price from the scrape
                             if (old_price is None) or abs(old_price - new_price) > 1e-6:
                                 # Price changed
                                 price_changed = True
-                                old_price_str = (f"{old_price:.2f}"
-                                                 if old_price is not None else "N/A")
+                                old_price_str = (
+                                    f"{old_price:.2f}" if old_price is not None else "N/A"
+                                )
                                 updated_price_str = f"{new_price:.2f}"
-                                price_message = (f"old price: {old_price_str}, "
-                                                 f"new price: {updated_price_str}")
+                                price_message = (
+                                    f"old price: {old_price_str}, new price: {updated_price_str}"
+                                )
 
                                 product.price = new_price
                                 product.last_updated = datetime.now(timezone.utc)
 
-                                # Insert history
+                                # Insert a new price history record
                                 ph = ProductPriceHistory(
                                     product_id=product.product_id,
                                     old_price=old_price if old_price else 0.0,
@@ -80,47 +89,35 @@ class AvailabilityChecker:
                                 )
                                 db.add(ph)
                             else:
-                                # Price didn't change
+                                # Price did not change
                                 if new_availability:
                                     product.last_updated = datetime.now(timezone.utc)
                                 price_message = "price not change"
                         else:
-                            # new_price is None => keep old price
+                            # The scraped price is None => keep old price
                             if new_availability:
+                                # If it is available, at least update last_updated
                                 product.last_updated = datetime.now(timezone.utc)
 
-                        # --- C) Print debug
-                        availability_str = str(new_availability)
+                        # --- (C) Print debug
                         print(
-                            f"[{availability_str}]"
+                            f"[{product.availability}]"
                             f"[{product.product_id}]"
                             f"[{price_message}]"
                             f"[{product.last_updated}]"
                             f"[{product.link}]"
                         )
 
-                        # --- D) Commit this product update
+                        # --- (D) Commit updates
                         db.merge(product)
                         db.commit()
 
-                        # --- E) DELETE IF UNAVAILABLE >= 2 WEEKS ---
-                        if product.availability is False:
-                            # By now last_updated should be offset-aware, but let's be safe:
-                            if product.last_updated and product.last_updated.tzinfo is None:
-                                product.last_updated = product.last_updated.replace(tzinfo=timezone.utc)
-                                db.merge(product)
-                                db.commit()
-
-                            two_weeks_ago = datetime.now(timezone.utc) - timedelta(days=14)
-                            if product.last_updated and product.last_updated < two_weeks_ago:
-                                db.delete(product)
-                                db.commit()
-                                print(f"Deleted Product ID: {product.product_id} (unavailable >= 2 weeks)")
+                        # **No deletion logic** in this version
 
                     except Exception as e:
                         print(f"[{store_name}] Error on Product ID: {product.product_id}, Link: {product.link}, Err: {e}")
             finally:
-                # Ensure WebDriver is closed
+                # Ensure the WebDriver is closed
                 scraper.quit_driver()
 
     def update_availability(self):
@@ -138,17 +135,15 @@ class AvailabilityChecker:
             # 1) Load all stores
             all_stores = db.query(Store).order_by(Store.store_id.asc()).all()
 
-        # 2) Process each store separately in chunks
+        # 2) Process each store in chunks
         for store in all_stores:
             store_name = store.store_name
             print(f"\nProcessing store: {store_name} (store_id={store.store_id})")
 
             offset = 0
             while True:
-                # Create a new session each iteration
                 with Session(engine) as db_chunk:
-                    # 2a) Query products for this store in ascending product_id order
-                    #     with offset/limit
+                    # 2a) Query chunk of products
                     chunk_q = (
                         db_chunk.query(Product)
                         .filter(Product.store_id == store.store_id)
@@ -164,8 +159,7 @@ class AvailabilityChecker:
 
                     print(f"  Loaded chunk of {len(chunk)} products from store '{store_name}' (offset={offset}).")
 
-                    # 2b) Fix naive timestamps in this chunk
-                    #     We do so in the same session (db_chunk).
+                    # 2b) Fix naive timestamps in chunk
                     changed = False
                     for prod in chunk:
                         if prod.last_updated and prod.last_updated.tzinfo is None:
@@ -173,10 +167,9 @@ class AvailabilityChecker:
                             changed = True
                     if changed:
                         db_chunk.commit()
-                        print(f"  Fixed naive timestamps in chunk (store_id={store.store_id}, offset={offset}).")
+                        print(f"  Fixed naive timestamps (store_id={store.store_id}, offset={offset}).")
 
                     # 2c) Call check_store_availability on these chunked products
-                    #     We pass them as Python objects. That function has its own session.
                     self.check_store_availability(store_name, chunk)
 
                 offset += self.chunk_size

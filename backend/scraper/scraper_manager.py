@@ -10,7 +10,7 @@ import pickle  # For loading the classification model
 
 
 class ScraperManager:
-    def __init__(self, search_values_file="scraper/search_values.json", model_file="ai_modules/classification_model.pkl"):
+    def __init__(self, search_values_file="search_values.json", model_file="ai_modules/classification_model.pkl"):
         self.search_values_file = os.path.join(
             os.path.dirname(__file__), search_values_file
         )

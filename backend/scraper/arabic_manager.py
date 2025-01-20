@@ -132,7 +132,7 @@ class ArabicTitleUpdater:
         only if no Arabic translation currently exists.
         """
         with Session(engine) as session:
-            stores = session.query(Store).order_by(Store.store_id.desc()).all()
+            stores = session.query(Store).order_by(Store.store_id.asc()).all()
 
         for store in stores:
             logger.info(f"Processing store: {store.store_name}")
