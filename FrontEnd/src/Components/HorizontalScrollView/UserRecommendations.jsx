@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import '../HorizontalScrollView/HorizontalScrollView.css'
+import { useLanguage } from "../../contexts/LanguageContext";
+import '../HorizontalScrollView/HorizontalScrollView.css';
 import Jarir from "../../assets/Jarir.png";
 import Extra from "../../assets/Extra.png";
 import AMZN from "../../assets/AMZN.png";
@@ -13,6 +14,7 @@ const UserRecommendations = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { token } = useAuth();
+  const { t, formatCurrency, isRTL } = useLanguage();
 
   useEffect(() => {
     const fetchUserRecommendations = async () => {
@@ -21,9 +23,9 @@ const UserRecommendations = () => {
       try {
         const url = `http://localhost:8000/search/recommendations`;
         const response = await fetch(url, {
-          credentials: 'include', // Add this to send cookies
+          credentials: 'include',
         });
-        if (!response.ok) throw new Error('Failed to fetch recommendations');
+        if (!response.ok) throw new Error(t('recommendations.fetchError'));
         const data = await response.json();
         
         console.log("User Recommendations:", data);
@@ -32,7 +34,7 @@ const UserRecommendations = () => {
           setItems(data);
         } else {
           setItems([]);
-          setError("No recommendations found for this user.");
+          setError(t('recommendations.noRecommendations'));
         }
       } catch (error) {
         console.error('Error fetching user recommendations:', error);
@@ -46,10 +48,10 @@ const UserRecommendations = () => {
     if (token) {
       fetchUserRecommendations();
     } else {
-      setError("You must be logged in to view recommendations.");
+      setError(t('recommendations.loginRequired'));
       setLoading(false);
     }
-  }, [token]);
+  }, [token, t]);
 
   const handleViewProduct = (productId) => {
     navigate(`/product/${productId}`);
@@ -72,7 +74,7 @@ const UserRecommendations = () => {
 
   const formatPrice = (item) => {
     if (!item.price) {
-      return <span className="available">Price not available</span>;
+      return <span className="available">{t('common.priceNotAvailable')}</span>;
     }
 
     const discount = item.last_old_price 
@@ -81,11 +83,17 @@ const UserRecommendations = () => {
 
     return (
       <div className="price-content">
-        <span className="current-price">{item.price.toFixed(2)} SAR</span>
+        <span className="current-price" dir={isRTL ? 'rtl' : 'ltr'}>
+          {formatCurrency(item.price)}
+        </span>
         {discount && (
           <>
-            <span className="old-price">{item.last_old_price.toFixed(2)} SAR</span>
-            <span className="discount-badge">{discount.toFixed(0)}% OFF</span>
+            <span className="old-price" dir={isRTL ? 'rtl' : 'ltr'}>
+              {formatCurrency(item.last_old_price)}
+            </span>
+            <span className="discount-badge">
+              {discount.toFixed(0)}% {t('common.off')}
+            </span>
           </>
         )}
       </div>
@@ -101,17 +109,17 @@ const UserRecommendations = () => {
   }
 
   return (
-    <div className="horizontal-scroll-view">
-      <h2 className="related-products-title">Recommended for You</h2>
+    <div className={`horizontal-scroll-view ${isRTL ? 'rtl' : ''}`}>
+      <h2 className="related-products-title">{t('recommendations.title')}</h2>
       {loading ? (
         <div className="loading-container1">
           <div className="loading-spinner1">
             <div className="spinner-ring"></div>
-            <p>Loading recommendations...</p>
+            <p>{t('common.loading')}</p>
           </div>
         </div>
       ) : items.length > 0 ? (
-        <div className="scroll-container">
+        <div className={`scroll-container ${isRTL ? 'rtl-scroll' : ''}`}>
           {items.map((item) => (
             <div 
               key={item.product_id}
@@ -120,11 +128,11 @@ const UserRecommendations = () => {
             >
               <div className="item-image-container">
                 <img 
-                  src={item.image_url || "https://via.placeholder.com/150"} 
+                  src={item.image_url || "/api/placeholder/150/150"} 
                   alt={item.title} 
                   loading="lazy" 
                 />
-                <ProductAlert/>
+                <ProductAlert productId={item.product_id} currentPrice={item.price} />
               </div>
               <h3>{item.title}</h3>
               <div className="item-footer">
@@ -135,7 +143,7 @@ const UserRecommendations = () => {
                   <img 
                     className="store-icon" 
                     src={getStoreIcon(item.store_id)} 
-                    alt="Store logo" 
+                    alt={t('common.storeLogo')} 
                   />
                 )}
               </div>
@@ -144,7 +152,7 @@ const UserRecommendations = () => {
         </div>
       ) : (
         <div className="no-results">
-          <p>No recommendations found.</p>
+          <p>{t('recommendations.noResults')}</p>
         </div>
       )}
     </div>

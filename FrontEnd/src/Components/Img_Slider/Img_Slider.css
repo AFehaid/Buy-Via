@@ -1,33 +1,103 @@
-.SLIDER {
-  width: 100%;
-  max-width: 100vw;
+.slideshow {
+  margin: 0 auto;
   overflow: hidden;
-  margin: 0;
-  padding: 0;
+  max-width: 100%;
   position: relative;
-  height: 400px; /* Adjust this value based on your needs */
 }
 
-.SLIDER div {
-  width: 100%;
-  height: 100%; /* This will make div take full height of parent */
+.slideshow.rtl {
+  direction: rtl;
 }
 
-.SLIDER img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.slideshow.ltr {
+  direction: ltr;
 }
 
-/* Media queries should only override when needed */
+.slideshowSlider {
+  white-space: nowrap;
+  transition: ease 1000ms;
+  height: 400px;
+}
+
+/* Media query for tablet */
 @media (max-width: 1200px) {
-  .SLIDER {
+  .slideshowSlider {
     height: 350px;
   }
 }
 
+/* Media query for mobile */
 @media (max-width: 768px) {
-  .SLIDER {
+  .slideshowSlider {
     height: 250px;
   }
+}
+
+.slide {
+  display: inline-block;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.navButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  font-size: 24px;
+  padding: 10px 15px;
+  border-radius: 4px;
+  z-index: 2;
+  transition: background-color 0.3s ease;
+}
+
+.navButton:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.rtl .prevButton {
+  left: 20px;
+}
+
+.rtl .nextButton {
+  right: 20px;
+}
+
+.ltr .prevButton {
+  left: 20px;
+}
+
+.ltr .nextButton {
+  right: 20px;
+}
+
+.slideshowDots {
+  text-align: center;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+}
+
+.slideshowDot {
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  margin: 0 4px;
+  background-color: rgba(255, 255, 255, 0.5);
+  transition: background-color 0.3s ease;
+}
+
+.slideshowDot.active {
+  background-color: white;
+  transform: scale(1.2);
 }

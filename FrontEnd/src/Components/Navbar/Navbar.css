@@ -418,6 +418,7 @@
 }
 
 .alert-product-name {
+    color: #343a40;
     font-size: 14px;
     font-weight: 500;
     margin-bottom: 4px;

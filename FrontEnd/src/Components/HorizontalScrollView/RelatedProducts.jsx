@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import './HorizontalScrollView.css'
+import { useLanguage } from "../../contexts/LanguageContext";
+import './HorizontalScrollView.css';
 import Jarir from "../../assets/Jarir.png";
 import Extra from "../../assets/Extra.png";
 import AMZN from "../../assets/AMZN.png";
@@ -11,6 +12,7 @@ const RelatedProducts = ({ category }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { t, formatCurrency, isRTL } = useLanguage();
 
   useEffect(() => {
     const fetchRelatedProducts = async () => {
@@ -26,7 +28,7 @@ const RelatedProducts = ({ category }) => {
           setItems(data);
         } else {
           setItems([]);
-          setError("No related products found for this category.");
+          setError(t('search.noRelatedProducts'));
         }
       } catch (error) {
         console.error('Error fetching related products:', error);
@@ -40,7 +42,7 @@ const RelatedProducts = ({ category }) => {
     if (category) {
       fetchRelatedProducts();
     }
-  }, [category]);
+  }, [category, t]);
 
   const handleViewProduct = (productId) => {
     navigate(`/product/${productId}`);
@@ -63,7 +65,7 @@ const RelatedProducts = ({ category }) => {
 
   const formatPrice = (item) => {
     if (!item.price) {
-      return <span className="available">Price not available</span>;
+      return <span className="available">{t('common.priceNotAvailable')}</span>;
     }
 
     const discount = item.last_old_price 
@@ -72,11 +74,17 @@ const RelatedProducts = ({ category }) => {
 
     return (
       <div className="price-content">
-        <span className="current-price">{item.price.toFixed(2)} SAR</span>
+        <span className="current-price" dir={isRTL ? 'rtl' : 'ltr'}>
+          {formatCurrency(item.price)}
+        </span>
         {discount && (
           <>
-            <span className="old-price">{item.last_old_price.toFixed(2)} SAR</span>
-            <span className="discount-badge">{discount.toFixed(0)}% OFF</span>
+            <span className="old-price" dir={isRTL ? 'rtl' : 'ltr'}>
+              {formatCurrency(item.last_old_price)}
+            </span>
+            <span className="discount-badge">
+              {discount.toFixed(0)}% {t('common.off')}
+            </span>
           </>
         )}
       </div>
@@ -86,23 +94,23 @@ const RelatedProducts = ({ category }) => {
   if (error) {
     return (
       <div className="error-container">
-        <p className="error-message">Failed to load related products. Please try again later.</p>
+        <p className="error-message">{t('common.errorLoading')}</p>
       </div>
     );
   }
 
   return (
-    <div className="horizontal-scroll-view">
-      <h2 className="related-products-title">Related Products</h2>
+    <div className={`horizontal-scroll-view ${isRTL ? 'rtl' : ''}`}>
+      <h2 className="related-products-title">{t('product.relatedProducts')}</h2>
       {loading ? (
         <div className="loading-container1">
           <div className="loading-spinner1">
             <div className="spinner-ring"></div>
-            <p>Loading related products...</p>
+            <p>{t('common.loading')}</p>
           </div>
         </div>
       ) : items.length > 0 ? (
-        <div className="scroll-container">
+        <div className={`scroll-container ${isRTL ? 'rtl-scroll' : ''}`}>
           {items.map((item) => (
             <div 
               key={item.product_id}
@@ -111,7 +119,7 @@ const RelatedProducts = ({ category }) => {
             >
               <div className="item-image-container">
                 <img src={item.image_url} alt={item.title} loading="lazy" />
-                <ProductAlert/>
+                <ProductAlert productId={item.product_id} currentPrice={item.price} />
               </div>
               <h3>{item.title}</h3>
               <div className="item-footer">
@@ -122,7 +130,7 @@ const RelatedProducts = ({ category }) => {
                   <img 
                     className="store-icon" 
                     src={getStoreIcon(item.store_id)} 
-                    alt="Store logo" 
+                    alt={t('common.storeLogo')} 
                   />
                 )}
               </div>
@@ -131,7 +139,7 @@ const RelatedProducts = ({ category }) => {
         </div>
       ) : (
         <div className="no-results">
-          <p>No related products found.</p>
+          <p>{t('search.noResults')}</p>
         </div>
       )}
     </div>

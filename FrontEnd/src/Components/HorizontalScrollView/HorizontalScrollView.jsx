@@ -36,7 +36,7 @@ const queueRequest = (url) => {
   });
 };
 
-const HorizontalScrollView = ({ prompt }) => {
+const HorizontalScrollView = ({ prompt, displayTitle }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -144,7 +144,7 @@ const HorizontalScrollView = ({ prompt }) => {
         onMouseLeave={() => setIsHovered(false)}
       >
         <h2 className={`prompt-text original ${isHovered ? 'hide' : 'show'}`}>
-          {prompt}
+          {displayTitle || prompt}
         </h2>
         <h2 className={`prompt-text hover ${isHovered ? 'show' : 'hide'}`}>
           {t('common.showMore')}

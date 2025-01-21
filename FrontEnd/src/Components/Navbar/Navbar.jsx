@@ -301,9 +301,6 @@ const Navbar = () => {
                                     <Dropdown.Item className='dropdown-items' href="/alerts">
                                         {t('navigation.alerts')}
                                     </Dropdown.Item>
-                                    <Dropdown.Item className='dropdown-items' href="/settings">
-                                        {t('navigation.settings')}
-                                    </Dropdown.Item>
                                     <Dropdown.Item className='dropdown-items' onClick={handleLogout}>
                                         {t('auth.logout')}
                                     </Dropdown.Item>

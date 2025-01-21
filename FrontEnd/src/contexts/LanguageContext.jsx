@@ -27,6 +27,7 @@ const translations = {
             subtitle: "Your ultimate AI-driven price comparison platform",
             login: "Sign In",
             signup: "Sign Up",
+            logout: "Log Out",
             usernamePlaceholder: "Username",
             emailPlaceholder: "Email",
             passwordPlaceholder: "Password",
@@ -62,9 +63,14 @@ const translations = {
             share: 'Share',
             setAlert: 'Alert at',
             buy:'Buy',
-            notAvailable: 'not available',
-            defaultDescription: 'This product offers a great combination of quality and value, designed to meet your needs. Suitable for various applications, it ensures durability and performance. For more details, please refer to the specifications or contact the seller.'
-        },
+            notAvailable: 'Price not available',
+            defaultDescription: 'This product offers a great combination of quality and value, designed to meet your needs. Suitable for various applications, it ensures durability and performance. For more details, please refer to the specifications or contact the seller.',
+            bestPrice: 'Best Price',
+            priceComparison: 'Price Comparison',
+            lastUpdated:'Price Last Updated',
+            unavailable: 'This product is currently unavailable',
+            relatedProducts: "Related Products",
+            recommendations: "Recommended for You"        },
         // Common
         common: {
             loading: 'Loading...',
@@ -83,7 +89,8 @@ const translations = {
             priceNotAvailable: 'Price not available',
             off: 'OFF',
             category: 'Category',
-            via:'Via'
+            via:'Via',
+            storeLogo: 'Store logo',
         },
         alerts: {
             title: "Price Alerts",
@@ -132,7 +139,28 @@ const translations = {
             resultsFor: 'Search Results for "{{query}}"',
             noResults: 'No products found for "{query}"',
             allProducts: 'All Products',
-            showing: 'Showing {{shown}} of {{total}} results'
+            showing: 'Showing {{shown}} of {{total}} results',
+            noRelatedProducts: "No related products found for this category"
+          },
+        recommendations: {
+            title: "Recommended for You",
+            loginRequired: "You must be logged in to view recommendations",
+            noRecommendations: "No recommendations found for this user",
+            fetchError: "Failed to fetch recommendations",
+            noResults: "No recommendations found",
+            loading: "Loading recommendations..."
+          },
+        related: {
+            title: "Related Products",
+            noRelatedProducts: "No related products found for this category",
+            loading: "Loading related products...",
+            error: "Error loading related products",
+            viewMore: "View More Related Products"
+          },
+          sections: {
+            iphone: 'Apple Iphone',
+            samsung: 'Samsung Galaxy',
+            huawei: 'Huawei Laptops'
           }
     },
     [LANGUAGES.AR]: {
@@ -166,7 +194,8 @@ const translations = {
             registrationSuccess: "تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.",
             passwordsMismatch: "كلمات المرور غير متطابقة.",
             registrationFailed: "فشل التسجيل. يرجى المحاولة مرة أخرى.",
-            generalError: "حدث خطأ. يرجى المحاولة مرة أخرى."
+            generalError: "حدث خطأ. يرجى المحاولة مرة أخرى.",
+
             
         },
         // Filters
@@ -223,7 +252,13 @@ const translations = {
             setAlert: 'التنبيه عند',
             buy:'إشتر',
             notAvailable: 'غير متوفر',
-            defaultDescription: 'يقدم هذا المنتج مزيجًا رائعًا من الجودة والقيمة، وهو مصمم لتلبية احتياجاتك. مناسب لتطبيقات مختلفة، ويضمن المتانة والأداء. لمزيد من التفاصيل، يرجى الرجوع إلى المواصفات أو الاتصال بالبائع.'
+            defaultDescription: 'يقدم هذا المنتج مزيجًا رائعًا من الجودة والقيمة، وهو مصمم لتلبية احتياجاتك. مناسب لتطبيقات مختلفة، ويضمن المتانة والأداء. لمزيد من التفاصيل، يرجى الرجوع إلى المواصفات أو الاتصال بالبائع.',
+            bestPrice: 'أفضل سعر',
+            priceComparison: 'مقارنة الأسعار',
+            lastUpdated:'آخر تحديث للسعر',
+            unavailable: 'هذا المنتج غير متوفر',
+            relatedProducts: "منتجات ذات صلة",
+            recommendations: "موصى به لك"
         },
         // Common
         common: {
@@ -243,13 +278,15 @@ const translations = {
             priceNotAvailable: 'السعر غير متوفر',
             off: 'خصم',
             category: 'الفئة',
-            via:'عبر'
+            via:'عبر',
+            storeLogo: 'شعار المتجر',
         },
         search: {
             resultsFor: ' نتيجة البحث لـ "{{query}}"',
             allProducts: 'All Products',
             showing: 'عرض {{shown}} منتج من {{total}} نتيجة',
-            noResults: 'لم يتم العثور على منتجات لـ "{query}"'
+            noResults: 'لم يتم العثور على منتجات لـ "{query}"',
+            noRelatedProducts: "لم يتم العثور على منتجات ذات صلة لهذه الفئة"
           },
           footer: {
             aboutUs: "من نحن",
@@ -265,7 +302,27 @@ const translations = {
             phone: "الهاتف: مثال",
             address: "العنوان: مثال",
             rights: "جميع الحقوق محفوظة"
-        }
+        },
+        recommendations: {
+            title: "موصى به لك",
+            loginRequired: "يجب تسجيل الدخول لعرض التوصيات",
+            noRecommendations: "لم يتم العثور على توصيات لهذا المستخدم",
+            fetchError: "فشل في جلب التوصيات",
+            noResults: "لم يتم العثور على توصيات",
+            loading: "جاري تحميل التوصيات..."
+        },
+        related: {
+            title: "منتجات ذات صلة",
+            noRelatedProducts: "لم يتم العثور على منتجات ذات صلة لهذه الفئة",
+            loading: "جاري تحميل المنتجات ذات الصلة...",
+            error: "خطأ في تحميل المنتجات ذات الصلة",
+            viewMore: "عرض المزيد من المنتجات ذات الصلة"
+        },
+        sections: {
+            iphone: 'أبل آيفون',
+            samsung: 'سامسونج جالاكسي',
+            huawei: 'لابتوب هواوي'
+          }
     }
 };
 

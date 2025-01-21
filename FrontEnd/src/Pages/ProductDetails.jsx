@@ -1,34 +1,59 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Loader2, TrendingDown, Store, Clock } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import Jarir from '../assets/Jarir.png';
-import AMZN from '../assets/AMZN1.png';
-import Extra from '../assets/Extra1.png';
-import './ProductDetails.css';
+import { getCategoryById } from './categories';
+import Extra from "../assets/Extra.png";
+import AMZN from "../assets/AMZN.png";
+import JarirBtn from '../assets/Jarir.png';
+import AMZNBtn from '../assets/AMZN1.png';
+import ExtraBtn from '../assets/Extra1.png';
 import RelatedProducts from '../Components/HorizontalScrollView/RelatedProducts';
 import UserRecommendations from '../Components/HorizontalScrollView/UserRecommendations';
+import './ProductDetails.css';
+import { useAuth } from '../Components/Navbar/AuthProvider';
+import LoadingPage from './LoadingPage';
 
 const ProductDetails = () => {
+    const { isLoggedIn } = useAuth();
     const { productId } = useParams();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
-    const { t, isRTL, formatCurrency } = useLanguage();
+    const [error, setError] = useState('');
+    const { t, isRTL, formatCurrency, language } = useLanguage();
+    const navigate = useNavigate();
 
     const getStoreLogo = (storeId) => {
-        switch(storeId) {
-            case 1: return AMZN;
-            case 2: return Jarir;
-            case 3: return Extra;
-            default: return null;
-        }
+        const storeLogos = {
+            1: AMZN,
+            2: JarirBtn,
+            3: Extra,
+        };
+        return storeLogos[storeId] || null;
+    };
+    const handleCategoryClick = (categoryId) => {
+        navigate(`/category/${categoryId}`);
+    };
+    const getBuyButtonLogo = (storeId) => {
+        const buyButtonLogos = {
+            1: AMZNBtn,
+            2: JarirBtn,
+            3: ExtraBtn,
+        };
+        return buyButtonLogos[storeId] || null;
     };
 
     const calculateDiscount = (currentPrice, oldPrice) => {
-        if (!currentPrice || !oldPrice || oldPrice <= currentPrice) return null;
+        if (!oldPrice || !currentPrice || oldPrice <= currentPrice) return null;
         const discount = ((oldPrice - currentPrice) / oldPrice) * 100;
-        return discount >= 4 ? discount : null;
+        return discount >= 4 ? Math.round(discount) : null;
+    };
+
+    const safeFormatCurrency = (price) => {
+        if (price === null || price === undefined || isNaN(price)) {
+            return t('product.notAvailable');
+        }
+        return formatCurrency(price);
     };
 
     useEffect(() => {
@@ -49,95 +74,159 @@ const ProductDetails = () => {
         fetchProduct();
     }, [productId]);
 
-    if (loading) {
-        return (
-            <div className="loading-container-details">
-                <Loader2 className="loading-spinner-details" />
-                <p>{t('common.loading')}</p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return <div className="error-message-details">{t('common.error')}</div>;
-    }
+    if (loading) return <LoadingPage/>
+    if (error) return <div className="pd-error">{t('common.error')}</div>;
 
     if (!product) return null;
 
     const defaultDescription = t('product.defaultDescription');
-    
-    const discount = product.last_old_price 
-        ? calculateDiscount(product.price, product.last_old_price)
-        : null;
+    const categoryInfo = getCategoryById(product.category_id, language);
+
+    const stores = product.price ? [
+        {
+            store_id: product.store_id,
+            price: product.price,
+            old_price: product.last_old_price || null,
+            availability: product.availability !== undefined ? product.availability : true,
+            link: product.link,
+            isLowestPrice: true,
+        },
+        {
+            store_id: 2,
+            price: product.price * 1.1,
+            availability: product.availability,
+            link: product.link,
+            isLowestPrice: false,
+        },
+        {
+            store_id: 3,
+            price: product.price * 1.2,
+            availability: product.availability,
+            link: product.link,
+            isLowestPrice: false,
+        }
+    ] : [];
 
     return (
-        <div className={`container-details ${isRTL ? 'rtl' : ''}`}>
-            <div className="left-column-details">
-                <div className="product-image-container-details">
-                    <img 
-                        src={product.image_url} 
-                        alt={product.title}
-                        className="product-image-details"
-                        onError={(e) => { e.target.src = 'https://via.placeholder.com/400'; }}
-                    />
-                </div>
-            </div>
-
-            <div className="right-column-details">
-                <div className="product-description-details">
-                    <span className="product-category-details">
-                        {product.category || t('common.category')}
-                    </span>
-                    <h1 className="product-title-details">{product.title}</h1>
-                    <p className="product-info-details">
-                        {product.info || defaultDescription}
-                    </p>
-                </div>
-
-                <div className={product.availability !== false ? 'product-price-details' : 'product-not-available-details'}>
-                    <div className="price-section-details">
-                        {product.price !== null && product.availability ? (
-                            <>
-                                <p className="current-price-details">
-                                    {formatCurrency(product.price)}
-                                </p>
-                                {discount && (
-                                    <>
-                                        <p className="old-price-details">
-                                            {formatCurrency(product.last_old_price)}
-                                        </p>
-                                        <span className="discount-badge-details">
-                                            {discount.toFixed(0)}% {t('common.off')}
-                                        </span>
-                                    </>
-                                )}
-                            </>
-                        ) : (
-                            <p>{t('product.notAvailable')}</p>
-                        )}
+        <div className={`pd-wrapper ${isRTL ? 'rtl' : ''}`}>
+            <div className="pd-container">
+                <div className="pd-main-content">
+                    <div className="pd-image-wrapper">
+                        <img
+                            src={product.image_url}
+                            alt={product.title}
+                            className="pd-image"
+                            onError={(e) => { e.target.src = 'https://via.placeholder.com/400'; }}
+                        />
                     </div>
 
-                    {product.availability && (
-                        <button 
-                            className="buy-button-details"
-                            onClick={() => window.open(product.link, "_blank")}
-                        >
-                            <svg width="36px" height="36px">
-                                <rect width="36" height="36" x="0" y="0" fillOpacity={0}></rect>
-                                <image 
-                                    width="36px"
-                                    height="36px"
-                                    href={getStoreLogo(product.store_id)}
-                                />
-                            </svg>
-                            <span className="via-details">{t('common.via')}</span>
-                            <span className="buy-details">{t('product.buy')}</span>
-                        </button>
-                    )}
+                    <div className="pd-product-info">
+                    <span 
+                        className="pd-category-tag" 
+                        onClick={() => handleCategoryClick(product.category_id)}
+                        style={{ cursor: 'pointer' }}
+                    >
+                        {categoryInfo ? `${categoryInfo.subcategory}` : t('common.category')}
+                    </span>
+                        <h1 className="pd-product-title">{product.title}</h1>
+
+                        <div className="pd-timestamp">
+                            <Clock className="pd-icon-small" />
+                            <span>{t('product.lastUpdated')}: {new Date().toLocaleDateString()}</span>
+                        </div>
+
+                        <p className="pd-description">
+                            {product.info || defaultDescription}
+                        </p>
+                    </div>
+
+                    <div className="pd-price-section">
+                        <div className="pd-price-list-container">
+                            <div className="pd-price-header">
+                                <Store className="pd-icon" />
+                                <h3 className="pd-section-title">{t('product.priceComparison')}</h3>
+                            </div>
+
+                            {stores.length > 0 ? (
+                                <div className="pd-price-grid">
+                                    {stores.map((store, index) => {
+                                        const storeDiscount = calculateDiscount(store.price, store.old_price);
+                                        const isOutOfStock = !store.availability;
+                                        return (
+                                            <div key={index} className={`pd-store-row ${!isOutOfStock && store.isLowestPrice ? 'pd-best-price' : ''}`}>
+                                                <div className="pd-store-info">
+                                                    <img
+                                                        src={getStoreLogo(store.store_id)}
+                                                        alt="Store logo"
+                                                        className="pd-store-logo"
+                                                    />
+                                                    <div className="pd-store-details">
+                                                        <div className="pd-store-badges">
+                                                            {!isOutOfStock && store.isLowestPrice && (
+                                                                <span className="pd-price-tag">
+                                                                    <TrendingDown className="pd-icon-small" />
+                                                                    {t('product.bestPrice')}
+                                                                </span>
+                                                            )}
+                                                            {isOutOfStock && (
+                                                                <span className="pd-out-of-stock-tag">
+                                                                    {t('product.outOfStock')}
+                                                                </span>
+                                                            )}
+                                                            {storeDiscount && !isOutOfStock && (
+                                                                <span className="pd-store-discount">
+                                                                    <TrendingDown className="pd-icon-small" />
+                                                                    {storeDiscount}% {t('common.off')}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="pd-store-prices">
+                                                            <span className={`pd-price-current ${isOutOfStock ? 'out-of-stock' : ''}`}>
+                                                                {safeFormatCurrency(store.price)}
+                                                            </span>
+                                                            {store.old_price && !isOutOfStock && (
+                                                                <span className="pd-price-old">
+                                                                    {safeFormatCurrency(store.old_price)}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {store.availability && store.price && (
+                                                            <button
+                                                                className="pd-btn-buy"
+                                                                onClick={() => window.open(store.link, '_blank')}
+                                                            >
+                                                                <svg width="36" height="36">
+                                                                    <rect width="36" height="36" x="0" y="0" fillOpacity="0"></rect>
+                                                                    <image
+                                                                        width="36"
+                                                                        height="36"
+                                                                        href={getBuyButtonLogo(store.store_id)}
+                                                                    />
+                                                                </svg>
+                                                                <span className="pd-btn-via">{t('common.via')}</span>
+                                                                <span className="pd-btn-text">{t('product.buy')}</span>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="pd-no-price">
+                                    <p>{t('product.unavailable')}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
-            <RelatedProducts category={product.category_id}/>
-            <UserRecommendations />
+
+            <div className="pd-additional-content">
+                <RelatedProducts category={product.category_id} />
+                {isLoggedIn && <UserRecommendations />}
+                </div>
         </div>
     );
 };

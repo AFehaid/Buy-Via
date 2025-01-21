@@ -20,12 +20,11 @@ html, body {
   text-align: center;
 }
 .related-products-title {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 600;
   color: #2d3748;
   margin: 20px 20px 10px;
   padding-bottom: 10px;
-  border-bottom: 2px solid #007bff;
 }
 .spinner-ring {
   display: inline-block;
@@ -198,7 +197,7 @@ html, body {
 
 .price-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 4px;
   min-width: 0;
 }
@@ -243,6 +242,11 @@ html, body {
   direction: rtl;
 }
 
+.horizontal-scroll-view.rtl .related-products-title {
+  text-align: right;
+}
+
+
 .horizontal-scroll-view.rtl .scroll-container {
   direction: rtl;
 }
@@ -277,6 +281,8 @@ html, body {
 
 /* Price formatting in RTL */
 [dir='rtl'] .price-container {
+  flex-direction: column;
+
   align-items: flex-end;
 }
 

@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Grid, List, Bell } from 'lucide-react';
 import AuthModal from './login.jsx';
 import './AlertManagement.css';
+import LoadingPage from './LoadingPage.jsx';
 
 const AlertManagement = () => {
   // Add language context
@@ -194,12 +195,7 @@ const AlertManagement = () => {
   };
 
     if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>{t('common.loading')}</p>
-      </div>
-    );
+    return <LoadingPage/>
   }
 
   if (!isLoggedIn) {
