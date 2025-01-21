@@ -1,7 +1,15 @@
+import logging
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from scraper.scraper import AmazonScraper, JarirScraper, ExtraScraper
-from models import Product, Store, engine
+from models import Product, Store, ProductTitleTranslation, engine
+
+# Set up logging
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+logger = logging.getLogger(__name__)
 
 
 class ArabicTitleUpdater:
@@ -28,78 +36,106 @@ class ArabicTitleUpdater:
 
     def scrape_and_update_title(self, scraper, product, session):
         """
-        Scrape Arabic title for a product and update it in the database.
+        Scrape Arabic title for a product and create/update a row in ProductTitleTranslation,
+        but skip if the scraper returns "Title unavailable".
         """
         arabic_url = self.get_arabic_url(product)
         if not arabic_url:
-            print(f"[{product.store.store_name}] Could not derive Arabic URL for product ID {product.product_id}.")
-            product.title_in_arabic = "Title unavailable"
-            session.merge(product)  # Ensure changes are staged
+            logger.warning(f"[{product.store.store_name}] Could not derive Arabic URL for product ID {product.product_id}.")
             return
 
         try:
             result = scraper.scrape_arabic(arabic_url)
-            if result and "title_arabic" in result:
-                product.title_in_arabic = result["title_arabic"]
-                print(f"[{product.store.store_name}] Product ID {product.product_id} - Arabic Title: {product.title_in_arabic}")
+            # If the scraper returns None or missing 'title_arabic', treat it as unavailable
+            if not result or "title_arabic" not in result:
+                logger.warning(f"[{product.store.store_name}] Product ID {product.product_id} - No Arabic title extracted. Skipping DB insert.")
+                return
+
+            arabic_title = result["title_arabic"]
+            
+            if arabic_title == "Title unavailable" or not arabic_title.strip():
+                # If the scraped Arabic title is literally "Title unavailable" or empty,
+                # skip writing it to the DB.
+                logger.warning(f"[{product.store.store_name}] Product ID {product.product_id} - Title unavailable. Skipping DB insert.")
+                return
+
+            # Otherwise, we have a valid Arabic title -> proceed to update or create a row
+            logger.info(f"[{product.store.store_name}] Product ID {product.product_id} - Arabic Title: {arabic_title}")
+
+            # Check if a translation record already exists
+            translation = session.query(ProductTitleTranslation).filter_by(
+                product_id=product.product_id, language="ar"
+            ).first()
+
+            if translation:
+                translation.translated_title = arabic_title
             else:
-                product.title_in_arabic = "Title unavailable"
-                print(f"[{product.store.store_name}] Product ID {product.product_id} - Arabic Title: Title unavailable")
-            session.merge(product)
+                session.add(ProductTitleTranslation(
+                    product_id=product.product_id,
+                    language="ar",
+                    translated_title=arabic_title
+                ))
+
         except Exception as e:
-            print(f"[{product.store.store_name}] Error updating Product ID {product.product_id}: {e}")
-            product.title_in_arabic = "Title unavailable"
-            session.merge(product)
+            logger.error(f"[{product.store.store_name}] Error scraping Product ID {product.product_id}: {e}")
+
 
     def process_store(self, store, batch_size=100):
         """
-        Process all products for a specific store in batches.
+        Process all products for a specific store in batches,
+        creating/updating the Arabic translation if missing.
         """
         scraper_class = self.scrapers.get(store.store_name)
         if not scraper_class:
-            print(f"No scraper found for store: {store.store_name}. Skipping.")
+            logger.error(f"No scraper found for store: {store.store_name}. Skipping.")
             return
 
         scraper = scraper_class(store.store_name)
         scraper.driver = scraper.setup_driver()
 
         with Session(engine) as session:
+            # Use exists() for a more efficient query
             total_products = session.query(Product).filter(
                 Product.store_id == store.store_id,
-                Product.title_in_arabic == None
+                ~session.query(ProductTitleTranslation.product_id)
+                .filter(ProductTitleTranslation.product_id == Product.product_id, ProductTitleTranslation.language == "ar")
+                .exists()
             ).count()
 
-            print(f"[{store.store_name}] Found {total_products} products to update.")
+            logger.info(f"[{store.store_name}] Found {total_products} products to update (no Arabic translation yet).")
 
             for offset in range(0, total_products, batch_size):
                 batch = session.query(Product).filter(
                     Product.store_id == store.store_id,
-                    Product.title_in_arabic == None
+                    ~session.query(ProductTitleTranslation.product_id)
+                    .filter(ProductTitleTranslation.product_id == Product.product_id, ProductTitleTranslation.language == "ar")
+                    .exists()
                 ).offset(offset).limit(batch_size).all()
 
-                print(f"[{store.store_name}] Processing batch {offset // batch_size + 1}/{(total_products + batch_size - 1) // batch_size}...")
+                logger.info(f"[{store.store_name}] Processing batch {offset // batch_size + 1}/{(total_products + batch_size - 1) // batch_size}...")
 
                 for product in batch:
                     self.scrape_and_update_title(scraper, product, session)
 
                 try:
                     session.commit()
-                    print(f"[{store.store_name}] Batch {offset // batch_size + 1} committed successfully.")
+                    logger.info(f"[{store.store_name}] Batch {offset // batch_size + 1} committed successfully.")
                 except SQLAlchemyError as e:
-                    print(f"[{store.store_name}] Error committing batch {offset // batch_size + 1}: {e}")
+                    logger.error(f"[{store.store_name}] Error committing batch {offset // batch_size + 1}: {e}")
                     session.rollback()
 
         scraper.quit_driver()
 
     def update_titles(self):
         """
-        Update Arabic titles for all products, store by store.
+        Update Arabic titles for all products, store by store,
+        only if no Arabic translation currently exists.
         """
         with Session(engine) as session:
-            stores = session.query(Store).order_by(Store.store_id.desc()).all()
+            stores = session.query(Store).order_by(Store.store_id.asc()).all()
 
         for store in stores:
-            print(f"Processing store: {store.store_name}")
+            logger.info(f"Processing store: {store.store_name}")
             self.process_store(store)
 
 

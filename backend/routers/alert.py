@@ -135,3 +135,31 @@ async def delete_alert(
     db.delete(alert)
     db.commit()
     return None
+
+# =============== New Endpoint Below ===============
+@router.get("/triggered", response_model=List[AlertResponse])
+async def get_triggered_alerts(
+    db: db_dependency,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Return all alerts for the current user with status='triggered'.
+    """
+    triggered_alerts = (
+        db.query(Alert)
+        .filter(
+            Alert.user_id == current_user["id"],
+            Alert.alert_status == "triggered"
+        )
+        .all()
+    )
+
+    return [
+        AlertResponse(
+            alert_id=a.alert_id,
+            product_id=a.product_id,
+            threshold_price=a.threshold_price,
+            alert_status=a.alert_status
+        )
+        for a in triggered_alerts
+    ]

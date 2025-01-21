@@ -1,49 +1,45 @@
+# main.py
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
+
 from routers import auth, search, alert
-from ai_modules.ai_recommendation import continuously_update_recommendations
-import threading
-from models import SessionLocal
+from scheduler import start_background_tasks  # <-- NEW: import the function
 
 load_dotenv()
-print(f"DB_URL: {os.getenv('DB_URL')}")
 
-def run_recommendation_updater():
-    """
-    Background task to run the recommendation engine.
-    """
-    with SessionLocal() as db:  # Use a database session
-        continuously_update_recommendations(db, interval_seconds=60)
-
-# Define the lifespan function
+# ======================================
+# Lifespan (Startup/Shutdown) logic
+# ======================================
 def lifespan(app: FastAPI):
-    """
-    Lifespan context manager to manage startup and shutdown tasks.
-    """
-    recommendation_thread = threading.Thread(target=run_recommendation_updater, daemon=True)
-    recommendation_thread.start()
-    print("Recommendation updater started in the background.")
-    
-    yield  # Allows the application to start
-    
+    # Start background tasks (threads)
+    start_background_tasks()
+
+    yield  # Application is up and running
     print("Application shutting down. Perform cleanup if necessary.")
 
+# ======================================
+# Create the FastAPI App
+# ======================================
 app = FastAPI(lifespan=lifespan)
 
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("API_URL")],  # The default React port
+    allow_origins=[os.getenv("API_URL_DEV")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Include your routers
 app.include_router(auth.router)
 app.include_router(search.router)
 app.include_router(alert.router)
 
+# Health check or root endpoint
 @app.get("/")
 async def health_check():
     return {"Healthy": 200}
