@@ -3,13 +3,19 @@
 from sqlalchemy.orm import Session
 from scraper.scraper import AmazonScraper, JarirScraper, ExtraScraper
 from models import Product, Store, ProductPriceHistory, engine
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from collections import defaultdict
+import sys
+
 
 class AvailabilityChecker:
-    def __init__(self, chunk_size=2000):
+    def __init__(self, chunk_size=2000, start_store_id=None, start_product_id=None):
         """
+        Initialize the AvailabilityChecker.
+
         :param chunk_size: Number of products to process at once (default=2000).
+        :param start_store_id: (Optional) Store ID to start processing from.
+        :param start_product_id: (Optional) Product ID to start processing from within each store.
         """
         self.scrapers = {
             "Amazon": AmazonScraper,
@@ -17,149 +23,167 @@ class AvailabilityChecker:
             "Extra": ExtraScraper,
         }
         self.chunk_size = chunk_size
+        self.start_store_id = start_store_id
+        self.start_product_id = start_product_id
 
     def check_store_availability(self, store_name, products):
         """
         Check availability for a chunk of products from a specific store and update the database.
-        
-        Changes in this version:
-          - No product deletion.
-          - If the scraped price is None, keep the old price in the DB.
+
+        :param store_name: Name of the store.
+        :param products: List of Product objects to process.
         """
         scraper_class = self.scrapers.get(store_name)
         if not scraper_class:
-            print(f"No scraper found for store: {store_name}")
+            print(f"[INFO] No scraper found for store: {store_name}")
             return
 
-        # 1) Initialize the scraper (WebDriver) for this store
+        # Initialize the scraper (WebDriver) for this store
         scraper = scraper_class(store_name)
-        scraper.driver = scraper.setup_driver()  # Ensure driver is set up
+        try:
+            scraper.driver = scraper.setup_driver()  # Ensure driver is set up
 
-        with Session(engine) as db:
-            try:
+            with Session(engine) as db:
                 for product in products:
                     try:
-                        # --- (A) SCRAPE AVAILABILITY & PRICE ---
+                        # --- A) SCRAPE AVAILABILITY & PRICE ---
                         scraped_info = scraper.scrape_availability(product.link)
 
-                        # Fallbacks
-                        new_availability = False
+                        # If scraping failed or returned no data, skip update
+                        if not scraped_info:
+                            print(f"[WARN] No data scraped for Product ID {product.product_id}, skipping update.")
+                            continue
+
+                        new_availability = scraped_info.get("availability", None)
+                        new_price_str = scraped_info.get("price", "N/A")
+
+                        # If availability is None, skip update
+                        if new_availability is None:
+                            print(f"[WARN] availability=None for Product ID {product.product_id}, skipping update.")
+                            continue
+
+                        # Attempt to convert price to float
                         new_price = None
+                        if new_price_str != "N/A":
+                            try:
+                                new_price = float(new_price_str)
+                            except ValueError:
+                                print(f"[WARN] Unable to parse price for Product ID {product.product_id}, skipping price update.")
+                                new_price = None
 
-                        if scraped_info:
-                            new_availability = scraped_info.get("availability", False)
-                            new_price_str = scraped_info.get("price", "N/A")
-                            if new_price_str != "N/A":
-                                try:
-                                    new_price = float(new_price_str)
-                                except ValueError:
-                                    new_price = None
-
-                        # --- (B) UPDATE FIELDS ---
+                        # --- B) UPDATE FIELDS ---
                         old_availability = product.availability
                         old_price = product.price
 
-                        # Always set the new availability (even if price is None)
+                        # Always update availability
                         product.availability = new_availability
 
                         price_changed = False
                         price_message = "price not change"
 
                         if new_price is not None:
-                            # We got a valid price from the scrape
-                            if (old_price is None) or abs(old_price - new_price) > 1e-6:
-                                # Price changed
+                            # Check if price has changed
+                            if (old_price is None) or (abs(old_price - new_price) > 1e-6):
                                 price_changed = True
-                                old_price_str = (
-                                    f"{old_price:.2f}" if old_price is not None else "N/A"
-                                )
+                                old_price_str = f"{old_price:.2f}" if old_price is not None else "N/A"
                                 updated_price_str = f"{new_price:.2f}"
-                                price_message = (
-                                    f"old price: {old_price_str}, new price: {updated_price_str}"
-                                )
+                                price_message = f"old price: {old_price_str}, new price: {updated_price_str}"
 
+                                # Update the product's price
                                 product.price = new_price
                                 product.last_updated = datetime.now(timezone.utc)
 
-                                # Insert a new price history record
-                                ph = ProductPriceHistory(
+                                # Record the price history
+                                price_history = ProductPriceHistory(
                                     product_id=product.product_id,
-                                    old_price=old_price if old_price else 0.0,
+                                    old_price=old_price if old_price is not None else 0.0,
                                     new_price=new_price
                                 )
-                                db.add(ph)
+                                db.add(price_history)
                             else:
-                                # Price did not change
+                                # Price remains unchanged
                                 if new_availability:
                                     product.last_updated = datetime.now(timezone.utc)
                                 price_message = "price not change"
                         else:
-                            # The scraped price is None => keep old price
+                            # If new_price is None, do not update the price in DB
                             if new_availability:
-                                # If it is available, at least update last_updated
                                 product.last_updated = datetime.now(timezone.utc)
+                            price_message = "price not change (scraped price is None)"
 
-                        # --- (C) Print debug
+                        # --- C) Print debug information ---
                         print(
-                            f"[{product.availability}]"
-                            f"[{product.product_id}]"
-                            f"[{price_message}]"
-                            f"[{product.last_updated}]"
-                            f"[{product.link}]"
+                            f"[Availability: {product.availability}] "
+                            f"[Product ID: {product.product_id}] "
+                            f"[{price_message}] "
+                            f"[Last Updated: {product.last_updated}] "
+                            f"[Link: {product.link}]"
                         )
 
-                        # --- (D) Commit updates
+                        # --- D) Commit the update ---
                         db.merge(product)
                         db.commit()
 
-                        # **No deletion logic** in this version
-
                     except Exception as e:
-                        print(f"[{store_name}] Error on Product ID: {product.product_id}, Link: {product.link}, Err: {e}")
-            finally:
-                # Ensure the WebDriver is closed
-                scraper.quit_driver()
+                        print(f"[ERROR] [{store_name}] Error processing Product ID: {product.product_id}, Link: {product.link}. Error: {e}")
+
+        except Exception as e:
+            print(f"[ERROR] Failed to initialize scraper for store: {store_name}. Error: {e}")
+        finally:
+            # Ensure the WebDriver is properly closed
+            scraper.quit_driver()
 
     def update_availability(self):
         """
         Update the availability of products in the database, store by store, in chunks.
-        
+
         Steps:
-          1) Fetch all store records.
-          2) For each store, load products in chunked queries (offset/limit).
-          3) Fix any naive last_updated => set tzinfo=UTC
-          4) Call check_store_availability on that chunk
-          5) Repeat until no more products for that store
+          1. Fetch all store records, optionally starting from a specific store_id.
+          2. For each store, load products in chunked queries (offset/limit), optionally starting from a specific product_id.
+          3. Fix any naive last_updated timestamps by setting tzinfo to UTC.
+          4. Call check_store_availability on each chunk of products.
+          5. Repeat until all products for all relevant stores are processed.
         """
         with Session(engine) as db:
-            # 1) Load all stores
-            all_stores = db.query(Store).order_by(Store.store_id.asc()).all()
+            # 1. Load all stores, optionally starting from start_store_id
+            store_query = db.query(Store).order_by(Store.store_id.asc())
+            if self.start_store_id is not None:
+                store_query = store_query.filter(Store.store_id >= self.start_store_id)
+                print(f"[INFO] Starting from store_id >= {self.start_store_id}")
 
-        # 2) Process each store in chunks
+            all_stores = store_query.all()
+            print(f"[INFO] Total stores to process: {len(all_stores)}")
+
+        # 2. Process each store in chunks
         for store in all_stores:
             store_name = store.store_name
-            print(f"\nProcessing store: {store_name} (store_id={store.store_id})")
+            print(f"\n[INFO] Processing store: {store_name} (store_id={store.store_id})")
 
             offset = 0
             while True:
                 with Session(engine) as db_chunk:
-                    # 2a) Query chunk of products
-                    chunk_q = (
+                    # 2a. Query chunk of products, optionally starting from start_product_id for the first chunk
+                    product_query = (
                         db_chunk.query(Product)
                         .filter(Product.store_id == store.store_id)
                         .order_by(Product.product_id.asc())
-                        .offset(offset)
-                        .limit(self.chunk_size)
                     )
+
+                    if self.start_product_id is not None and offset == 0:
+                        product_query = product_query.filter(Product.product_id >= self.start_product_id)
+                        print(f"  [INFO] Starting from product_id >= {self.start_product_id}")
+
+                    chunk_q = product_query.offset(offset).limit(self.chunk_size)
                     chunk = chunk_q.all()
 
-                    # If no products left, break out
+                    # If no products left, break out of the loop
                     if not chunk:
+                        print(f"  [INFO] No more products to process for store '{store_name}'.")
                         break
 
-                    print(f"  Loaded chunk of {len(chunk)} products from store '{store_name}' (offset={offset}).")
+                    print(f"  [INFO] Loaded chunk of {len(chunk)} products (offset={offset}).")
 
-                    # 2b) Fix naive timestamps in chunk
+                    # 2b. Fix naive timestamps in the current chunk
                     changed = False
                     for prod in chunk:
                         if prod.last_updated and prod.last_updated.tzinfo is None:
@@ -167,16 +191,32 @@ class AvailabilityChecker:
                             changed = True
                     if changed:
                         db_chunk.commit()
-                        print(f"  Fixed naive timestamps (store_id={store.store_id}, offset={offset}).")
+                        print(f"  [INFO] Fixed naive timestamps in current chunk.")
 
-                    # 2c) Call check_store_availability on these chunked products
+                    # 2c. Check availability for the current chunk
                     self.check_store_availability(store_name, chunk)
 
+                # Increment offset for the next chunk
                 offset += self.chunk_size
 
-        print("\nAll stores processed successfully.")
+        print("\n[INFO] All stores processed successfully.")
 
 
 if __name__ == "__main__":
-    checker = AvailabilityChecker(chunk_size=2000)
+    import argparse
+
+    # Set up command-line argument parsing
+    parser = argparse.ArgumentParser(description="Check product availability and update the database.")
+    parser.add_argument('--chunk_size', type=int, default=2000, help='Number of products to process at once.')
+    parser.add_argument('--start_store_id', type=int, default=None, help='Store ID to start processing from.')
+    parser.add_argument('--start_product_id', type=int, default=None, help='Product ID to start processing from within each store.')
+
+    args = parser.parse_args()
+
+    # Initialize the AvailabilityChecker with optional parameters
+    checker = AvailabilityChecker(
+        chunk_size=args.chunk_size,
+        start_store_id=args.start_store_id,
+        start_product_id=args.start_product_id
+    )
     checker.update_availability()

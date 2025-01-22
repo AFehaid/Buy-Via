@@ -7,12 +7,8 @@ from selenium.common.exceptions import TimeoutException, WebDriverException, NoS
 from bs4 import BeautifulSoup
 from time import sleep
 import urllib.parse
-import platform
-import os
-import stat
 import re
-from scrapy import Selector
-import requests
+
 
 class StoreScraper:
     def __init__(self, store_name):
