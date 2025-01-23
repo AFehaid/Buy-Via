@@ -493,6 +493,32 @@ body {
     margin-left: 0;
     margin-right: 280px;
 }
+
+.checkbox-filter {
+    padding: 8px 0;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #4a5568;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #358ED7;
+}
+
+.rtl .checkbox-label {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
 .rtl .availability-status {
     color: #e74c3c;
     font-size: 14px;

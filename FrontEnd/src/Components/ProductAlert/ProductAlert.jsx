@@ -14,8 +14,34 @@ const PriceAlertSuccess = ({ message, isRTL }) => (
   </div>
 );
 
-const PriceAlertPopup = ({ onClose, onSubmit, thresholdPrice, setThresholdPrice, existingAlert, t, isRTL }) => {
+const PriceAlertPopup = ({ onClose, onSubmit, thresholdPrice, setThresholdPrice, existingAlert, t, isRTL, currentPrice }) => {
   const popupRef = useRef(null);
+  const [error, setError] = useState("");
+
+  const handlePriceChange = (e) => {
+    const value = parseFloat(e.target.value);
+    setThresholdPrice(e.target.value);
+    
+    if (value >= currentPrice) {
+      setError(t('alerts.thresholdTooHigh')); // Add this translation
+    } else if (value <= 0) {
+      setError(t('alerts.thresholdTooLow')); // Add this translation
+    } else {
+      setError("");
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const value = parseFloat(thresholdPrice);
+    
+    if (value >= currentPrice) {
+      setError(t('alerts.thresholdTooHigh'));
+      return;
+    }
+    
+    onSubmit(false);
+  };
 
   return ReactDOM.createPortal(
     <div className="pa-modal-overlay" onClick={onClose}>
@@ -46,10 +72,7 @@ const PriceAlertPopup = ({ onClose, onSubmit, thresholdPrice, setThresholdPrice,
             </div>
           </div>
         ) : (
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            onSubmit(false);
-          }} className="pa-form">
+          <form onSubmit={handleSubmit} className="pa-form">
             <div className="pa-input-group">
               <label className="pa-label">
                 {t('alerts.thresholdPrice')}:
@@ -57,16 +80,25 @@ const PriceAlertPopup = ({ onClose, onSubmit, thresholdPrice, setThresholdPrice,
               <input
                 type="number"
                 value={thresholdPrice}
-                onChange={(e) => setThresholdPrice(e.target.value)}
-                className="pa-input"
+                onChange={handlePriceChange}
+                className={`pa-input ${error ? 'pa-input-error' : ''}`}
                 required
-                min="0"
+                min="0.01"
+                max={currentPrice - 0.01}
                 step="any"
                 dir="ltr"
               />
+              {error && <span className="pa-error-message">{error}</span>}
+              <span className="pa-helper-text">
+                {t('alerts.currentPrice')}: {currentPrice}
+              </span>
             </div>
             <div className="pa-button-group">
-              <button type="submit" className="pa-submit-btn">
+              <button 
+                type="submit" 
+                className="pa-submit-btn"
+                disabled={!!error}
+              >
                 {t('alerts.setAlert')}
               </button>
               <button
@@ -88,7 +120,7 @@ const PriceAlertPopup = ({ onClose, onSubmit, thresholdPrice, setThresholdPrice,
 const ProductAlert = ({ productId, currentPrice }) => {
   const { refreshAlerts } = useAlertRefresh();
   const [showPopup, setShowPopup] = useState(false);
-  const [thresholdPrice, setThresholdPrice] = useState(currentPrice || "");
+  const [thresholdPrice, setThresholdPrice] = useState("");
   const [existingAlert, setExistingAlert] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -250,6 +282,7 @@ const ProductAlert = ({ productId, currentPrice }) => {
             existingAlert={existingAlert}
             t={t}
             isRTL={isRTL}
+            currentPrice={currentPrice} 
           />
         )}
 

@@ -13,9 +13,10 @@ import UserRecommendations from '../Components/HorizontalScrollView/UserRecommen
 import './ProductDetails.css';
 import { useAuth } from '../contexts/AuthProvider';
 import LoadingPage from './LoadingPage';
+import ProductAlert from '../Components/ProductAlert/ProductAlert';
 
 const ProductDetails = () => {
-    const { isLoggedIn } = useAuth();
+    const { isLoggedIn,token } = useAuth();
     const { productId } = useParams();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -53,6 +54,24 @@ const ProductDetails = () => {
         return buyButtonLogos[storeId] || null;
     };
 
+    const formatLastUpdated = (timestamp) => {
+        if (!timestamp) return '';
+        
+        try {
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return ''; // Invalid date
+            
+            return date.toLocaleDateString(language === 'ar' ? 'ar-US' : 'en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            });
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return '';
+        }
+    };
+
     const calculateDiscount = (currentPrice, oldPrice) => {
         if (!oldPrice || !currentPrice || oldPrice <= currentPrice) return null;
         const discount = ((oldPrice - currentPrice) / oldPrice) * 100;
@@ -70,7 +89,13 @@ const ProductDetails = () => {
         const fetchProduct = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`http://localhost:8000/search/${productId}`);
+                const response = await fetch(`http://localhost:8000/search/${productId}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    credentials: 'include'
+                });
                 if (!response.ok) throw new Error('Failed to fetch product');
                 const data = await response.json();
                 setProduct(data);
@@ -131,18 +156,28 @@ const ProductDetails = () => {
                     </div>
 
                     <div className="pd-product-info">
-                    <span 
-                        className="pd-category-tag" 
-                        onClick={() => handleCategoryClick(product.category_id)}
-                        style={{ cursor: 'pointer' }}
-                    >
-                        {categoryInfo ? `${categoryInfo.subcategory}` : t('common.category')}
-                    </span>
+                        <span 
+                            className="pd-category-tag" 
+                            onClick={() => handleCategoryClick(product.category_id)}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            {categoryInfo ? `${categoryInfo.subcategory}` : t('common.category')}
+                        </span>
                         <h1 className="pd-product-title">{getDisplayTitle(product)}</h1>
 
-                        <div className="pd-timestamp">
-                            <Clock className="pd-icon-small" />
-                            <span>{t('product.lastUpdated')}: {new Date().toLocaleDateString()}</span>
+                        <div className="pd-info-header">
+                            {product && product.price && (
+                                <div className="pd-alert-button">
+                                    <ProductAlert 
+                                        productId={productId} 
+                                        currentPrice={product.last_updated_price || product.price}
+                                    />
+                                </div>
+                            )}
+                            <div className="pd-timestamp">
+                                <Clock className="pd-icon-small" />
+                                <span>{t('product.lastUpdated')}: {formatLastUpdated(product.last_updated)}</span>
+                            </div>
                         </div>
 
                         <p className="pd-description">
@@ -155,7 +190,7 @@ const ProductDetails = () => {
                             <div className="pd-price-header">
                                 <Store className="pd-icon" />
                                 <h3 className="pd-section-title">{t('product.priceComparison')}</h3>
-                            </div>
+                        </div>
 
                             {stores.length > 0 ? (
                                 <div className="pd-price-grid">

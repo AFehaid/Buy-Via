@@ -34,6 +34,7 @@ const CategoryProducts = () => {
     const sar = ' SAR';
     const [showScrollTop, setShowScrollTop] = useState(false);
     const [isStoresExpanded, setIsStoresExpanded] = useState(false);
+    const [inStockOnly, setInStockOnly] = useState(false);
 
     const stores = [
         { id: 'all', translations: { en: 'All Stores', ar: 'جميع المتاجر' }, icon: null },
@@ -61,7 +62,7 @@ const CategoryProducts = () => {
         setResults([]);
         setPage(1);
         setHasMore(true);
-    }, [sortBy, selectedStore, priceRange[0], priceRange[1], categoryId]);
+    }, [sortBy, selectedStore, priceRange[0], priceRange[1], categoryId,inStockOnly]);
 
     useEffect(() => {
         if (categoryId) {
@@ -77,7 +78,7 @@ const CategoryProducts = () => {
             const maxPrice = priceRange[1] === 5000 ? 50000 : priceRange[1];
             const storeFilter = selectedStore === 'all' ? '' : selectedStore;
 
-            const url = `http://localhost:8000/search/category-products?category_id=${categoryId}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}${storeFilter ? `&store_filter=${storeFilter}` : ''}&in_stock_only=false`;
+            const url = `http://localhost:8000/search/category-products?category_id=${categoryId}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}${storeFilter ? `&store_filter=${storeFilter}` : ''}${inStockOnly ? '&in_stock_only=true' : ''}`;
 
             const response = await fetch(url);
             if (!response.ok) {
@@ -105,7 +106,7 @@ const CategoryProducts = () => {
         } finally {
             setLoading(false);
         }
-    }, [categoryId, page, sortBy, selectedStore, priceRange, pageSize]);
+    }, [categoryId, page, sortBy, selectedStore, priceRange, pageSize, inStockOnly]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -200,6 +201,20 @@ const CategoryProducts = () => {
                     <div className="price-range-display">
                         <span>{formatCurrency(priceRange[0])}</span>
                         <span>{formatCurrency(priceRange[1])}</span>
+                    </div>
+                </div>
+
+                <div className="filter-section">
+                    <h3 className="filter-title">{t('filters.availability')}</h3>
+                    <div className="checkbox-filter">
+                        <label className="checkbox-label">
+                            <input
+                                type="checkbox"
+                                checked={inStockOnly}
+                                onChange={(e) => setInStockOnly(e.target.checked)}
+                            />
+                            <span>{t('filters.inStockOnly')}</span>
+                        </label>
                     </div>
                 </div>
     

@@ -8,9 +8,54 @@
   flex-direction: column;
 }
 
+.pd-product-info {
+  padding: 0 16px;
+}
 
+.pd-info-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
 
+/* Alert button in product info */
+.pd-product-info .pa-container {
+  position: relative;
+  top: 0;
+  right: 0;
+  pointer-events: auto;
+}
 
+.pd-product-info .pa-button {
+  opacity: 1;
+  background-color: #f8fafc;
+  width: 36px;
+  height: 36px;
+}
+
+.pd-product-info .pa-button:hover {
+  background-color: #f1f5f9;
+}
+
+.pd-product-info .pa-button.pa-active {
+  background-color: #fee2e2;
+}
+
+/* Timestamp styles */
+.pd-timestamp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.pd-timestamp .pd-icon-small {
+  width: 16px;
+  height: 16px;
+  color: #64748b;
+}
 /* Button Styles */
 .pa-button {
   position: relative;

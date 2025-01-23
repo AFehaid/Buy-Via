@@ -49,7 +49,9 @@ const translations = {
             relevance: 'Relevance',
             priceLowToHigh: 'Price: Low to High',
             priceHighToLow: 'Price: High to Low',
-            newest: 'Newest First'
+            newest: 'Newest First',
+            availability: "Availability",
+            inStockOnly: "In Stock Only"
         },
         // Product
         product: {
@@ -120,7 +122,9 @@ const translations = {
             remove: "Yes, Remove Alert",
             triggered: "Triggered Alerts",
             manageAlerts:"Manage Alerts",
-            noTriggered:"You Don't Have Triggered Alerts"
+            noTriggered:"You Don't Have Triggered Alerts",
+            thresholdTooHigh: "Threshold must be lower than current price",
+            thresholdTooLow: "Threshold must be greater than zero"
             
         },
         footer: {
@@ -212,7 +216,9 @@ const translations = {
             relevance: 'الأكثر صلة',
             priceLowToHigh: 'السعر: من الأقل إلى الأعلى',
             priceHighToLow: 'السعر: من الأعلى إلى الأقل',
-            newest: 'الأحدث أولاً'
+            newest: 'الأحدث أولاً',
+            availability:"التوفر",
+            inStockOnly:"المتوفر فقط"
         },
         alerts: {
             title: "تنبيهات الأسعار",
@@ -243,8 +249,9 @@ const translations = {
             remove: "نعم، إزالة التنبيه",
             triggered: "إشعارات التنبيهات",
             manageAlerts:"إدارة التنبيهات",
-            noTriggered:"لا يوجد لديك إشعارات"
-
+            noTriggered:"لا يوجد لديك إشعارات",
+            thresholdTooHigh: "السعر المستهدف يجب أن يكون أقل من السعر الحالي",
+            thresholdTooLow: "السعر المستهدف يجب أن يكون أعلى من 0"
           },
         // Product
         product: {

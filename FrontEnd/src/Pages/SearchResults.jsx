@@ -9,7 +9,7 @@ import Box from '@mui/material/Box';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getCategoryList, getCategoryById } from '../Pages/categories';
 import ProductAlert from '../Components/ProductAlert/ProductAlert';
-
+import { useAuth } from '../contexts/AuthProvider';
 
 
 
@@ -18,6 +18,7 @@ function valuetext(value) {
     return `${value.toFixed(0)}`;
 }
 const SearchResults = () => {
+    const { token } = useAuth();
     const { language, t, formatCurrency } = useLanguage();
     const navigate = useNavigate();
     const location = useLocation();
@@ -42,6 +43,7 @@ const SearchResults = () => {
     const [showScrollTop, setShowScrollTop] = useState(false);
     const categoryId = queryParams.get('category_id') || 'all';
     const [isStoresExpanded, setIsStoresExpanded] = useState(false);
+    const [inStockOnly, setInStockOnly] = useState(false);
 
     const stores = [
         { id: 'all', translations: { en: 'All Stores', ar: 'جميع المتاجر' }, icon: null },
@@ -78,21 +80,26 @@ const SearchResults = () => {
         setResults([]);
         setPage(1);
         setHasMore(true);
-    }, [query, sortBy, selectedStore, priceRange[0], priceRange[1], categoryId]);
+    }, [query, sortBy, selectedStore, priceRange[0], priceRange[1], categoryId, inStockOnly]);
 
 
-const fetchResults = useCallback(async () => {
-    try {
-        setLoading(true);
-        let url;
-        const maxPrice = priceRange[1] === 5000 ? 50000 : priceRange[1]; 
-        const storeFilter = selectedStore === 'all' ? '' : selectedStore;
-        const categoryFilter = selectedCategory === 'all' ? '' : selectedCategory;
-
-        // Always use the search endpoint, but add category_id as a filter if selected
-        url = `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}${storeFilter ? `&store_filter=${storeFilter}` : ''}${categoryFilter ? `&category_id=${categoryFilter}` : ''}`;
-
-        const response = await fetch(url);
+    const fetchResults = useCallback(async () => {
+        try {
+            setLoading(true);
+            let url;
+            const maxPrice = priceRange[1] === 5000 ? 50000 : priceRange[1]; 
+            const storeFilter = selectedStore === 'all' ? '' : selectedStore;
+            const categoryFilter = selectedCategory === 'all' ? '' : selectedCategory;
+    
+            url = `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}${storeFilter ? `&store_filter=${storeFilter}` : ''}${categoryFilter ? `&category_id=${categoryFilter}` : ''}${inStockOnly ? '&in_stock_only=true' : ''}`;
+    
+            const response = await fetch(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'include'
+            });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -118,7 +125,7 @@ const fetchResults = useCallback(async () => {
     } finally {
         setLoading(false);
     }
-}, [query, page, sortBy, selectedStore, priceRange, selectedCategory, pageSize]);
+}, [query, page, sortBy, selectedStore, priceRange, selectedCategory, pageSize, inStockOnly]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -246,6 +253,19 @@ const fetchResults = useCallback(async () => {
                     <div className="price-range-display">
                         <span>{formatCurrency(priceRange[0])}</span>
                         <span>{formatCurrency(priceRange[1])}</span>
+                    </div>
+                </div>
+                <div className="filter-section">
+                    <h3 className="filter-title">{t('filters.availability')}</h3>
+                    <div className="checkbox-filter">
+                        <label className="checkbox-label">
+                            <input
+                                type="checkbox"
+                                checked={inStockOnly}
+                                onChange={(e) => setInStockOnly(e.target.checked)}
+                            />
+                            <span>{t('filters.inStockOnly')}</span>
+                        </label>
                     </div>
                 </div>
 
