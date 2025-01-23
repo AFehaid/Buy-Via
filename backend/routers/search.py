@@ -73,6 +73,7 @@ class ProductResponse(BaseModel):
     category_id: int
     group_id: int | None
     arabic_title: Optional[str] = None  # <--- NEW FIELD
+    last_updated: str
 
     class Config:
         from_attributes = True
@@ -225,7 +226,8 @@ def format_product_response(product: Product, last_old_price: float = None) -> d
         "category_id": product.category_id,
         "last_old_price": last_old_price,
         "group_id": product.group_id,
-        "arabic_title": arabic_title  # None if no Arabic translation
+        "arabic_title": arabic_title,  # None if no Arabic translation
+        "last_updated": product.last_updated.strftime("%Y-%m-%d")  # Format to year-month-day
     }
 
 
