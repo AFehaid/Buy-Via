@@ -11,7 +11,7 @@ import ExtraBtn from '../assets/Extra1.png';
 import RelatedProducts from '../Components/HorizontalScrollView/RelatedProducts';
 import UserRecommendations from '../Components/HorizontalScrollView/UserRecommendations';
 import './ProductDetails.css';
-import { useAuth } from '../Components/Navbar/AuthProvider';
+import { useAuth } from '../contexts/AuthProvider';
 import LoadingPage from './LoadingPage';
 
 const ProductDetails = () => {

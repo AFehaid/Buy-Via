@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../Components/Navbar/AuthProvider';
+import { useAuth } from '../contexts/AuthProvider.jsx';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Grid, List, Bell } from 'lucide-react';
 import AuthModal from './login.jsx';

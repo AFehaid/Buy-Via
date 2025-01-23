@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import './Navbar.css';
 import Logo from '../Logo/Logo';
 import Dropdown from 'react-bootstrap/Dropdown';
-import { useAuth } from './AuthProvider';
+import { useAuth } from '../../contexts/AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import AuthModal from '../../Pages/login';
 import { useLanguage } from '../../contexts/LanguageContext';

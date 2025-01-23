@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import ReactDOM from "react-dom";
 import { FaBell, FaCheck } from 'react-icons/fa';
-import { useAuth } from '../Navbar/AuthProvider';
+import { useAuth } from '../../contexts/AuthProvider';
 import { useLanguage } from '../../contexts/LanguageContext';
 import AuthModal from '../../Pages/login';
 import "./ProductAlert.css";
@@ -99,15 +99,13 @@ const ProductAlert = ({ productId, currentPrice }) => {
   const { t, isRTL } = useLanguage();
 
   const checkExistingAlert = async () => {
-    if (!isLoggedIn || !token || isLoading) return;
-
+    if (!isLoggedIn || isLoading) return;
+  
     setIsLoading(true);
     try {
       const userResponse = await fetch('http://localhost:8000/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        credentials: 'include'
+        credentials: 'include', // This ensures cookies are sent
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {} // Optional header auth
       });
       
       if (!userResponse.ok) {

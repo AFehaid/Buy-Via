@@ -5,7 +5,7 @@ import '../HorizontalScrollView/HorizontalScrollView.css';
 import Jarir from "../../assets/Jarir.png";
 import Extra from "../../assets/Extra.png";
 import AMZN from "../../assets/AMZN.png";
-import { useAuth } from "../Navbar/AuthProvider";
+import { useAuth } from "../../contexts/AuthProvider";
 import ProductAlert from "../ProductAlert/ProductAlert";
 
 const UserRecommendations = () => {

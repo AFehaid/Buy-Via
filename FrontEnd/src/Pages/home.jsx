@@ -7,7 +7,7 @@ import PopularCategories from "../Components/PopularCategories/PopularCategories
 import a6 from "../assets/a6.jpg"
 import a5 from "../assets/a5.jpg"
 import UserRecommendations from "../Components/HorizontalScrollView/UserRecommendations";
-import { useAuth } from "../Components/Navbar/AuthProvider";
+import { useAuth } from "../contexts/AuthProvider";
 import { useLanguage } from "../contexts/LanguageContext";
 
 const Home = () => {
