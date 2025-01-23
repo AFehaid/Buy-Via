@@ -6,3 +6,4 @@ __pycache__
 buy_via.db
 ai_modules/classification_model.pkl
 ../../.venv/
+buy_via.db
