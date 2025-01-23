@@ -8,34 +8,8 @@
   flex-direction: column;
 }
 
-.item-image-container {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  overflow: hidden;
-  border-radius: 8px;
-}
 
-.item-image-container img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  transition: transform 0.3s ease;
-}
 
-/* Container Styles */
-.pa-container {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.pa-rtl.pa-container {
-  right: auto;
-  left: 8px;
-}
 
 /* Button Styles */
 .pa-button {
@@ -53,6 +27,41 @@
   transition: all 0.3s ease;
   pointer-events: auto;
 }
+.item-image-container,
+.product-image-container {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+
+.item-image-container img,
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.pa-container {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.rtl .pa-container {
+  right: auto;
+  left: 8px;
+}
+
 
 .pa-button.pa-active {
   background-color: rgba(255, 236, 236, 0.9);
@@ -290,11 +299,21 @@
 @media (min-width: 768px) {
   .pa-button {
     opacity: 0;
-  }
-  
-  .item-image-container:hover .pa-button {
+    transition: opacity 0.3s ease;
+}
+
+.item-image-container:hover .pa-button,
+.product-image-container:hover .pa-button {
     opacity: 1;
-  }
+}
+
+.pa-button.pa-active {
+    opacity: 1;
+}
+
+.pa-button.pa-active {
+    opacity: 1;
+}
 
   .pa-success-toast {
     top: 80px; /* Adjusted for desktop navbar */
@@ -313,7 +332,9 @@
   .pa-button {
     opacity: 1 !important;
   }
-  
+  .product-image-container {
+    height: 160px;
+}
   .pa-success-toast {
     top: 64px;
     width: 90%;

@@ -5,6 +5,8 @@ import { Grid, List, Bell } from 'lucide-react';
 import AuthModal from './login.jsx';
 import './AlertManagement.css';
 import LoadingPage from './LoadingPage.jsx';
+import { useNavigate } from "react-router-dom";
+
 
 const AlertManagement = () => {
   // Add language context
@@ -16,6 +18,7 @@ const AlertManagement = () => {
   const [newThresholdPrice, setNewThresholdPrice] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [alertToDelete, setAlertToDelete] = useState(null);
+  const navigate = useNavigate()
   const [viewMode, setViewMode] = useState(() => {
     return window.innerWidth <= 768 ? 'list' : 'grid';
   });
@@ -46,7 +49,16 @@ const AlertManagement = () => {
       return null;
     }
   };
-
+  const getDisplayTitle = (productDetail) => {
+    if (!productDetail) {
+      return t('alerts.product');
+    }
+    
+    if (isRTL) {
+      return productDetail.arabic_title || productDetail.title || t('alerts.product');
+    }
+    return productDetail.title || t('alerts.product');
+  };
   const fetchAlerts = async () => {
     try {
       const currentToken = localStorage.getItem("token");
@@ -55,7 +67,7 @@ const AlertManagement = () => {
         return;
       }
 
-      // First fetch the current user's details
+
       const userResponse = await fetch('http://localhost:8000/auth/me', {
         headers: {
           'Authorization': `Bearer ${currentToken}`
@@ -73,7 +85,6 @@ const AlertManagement = () => {
       const userData = await userResponse.json();
       const userId = userData.user.id;
 
-      // Then fetch alerts for the current user
       const alertsResponse = await fetch(`http://localhost:8000/alerts/?user_id=${userId}`, {
         headers: {
           'Authorization': `Bearer ${currentToken}`
@@ -117,10 +128,8 @@ const AlertManagement = () => {
     }
   }, [isLoggedIn, token]);
 
-  // Rest of the component handlers...
   const handleUpdateAlert = async (alertId) => {
     try {
-      // Make sure we're sending a valid token
       const currentToken = localStorage.getItem("token");
       if (!currentToken) {
         setShowAuthModal(true);
@@ -136,11 +145,10 @@ const AlertManagement = () => {
         body: JSON.stringify({
           threshold_price: parseFloat(newThresholdPrice)
         }),
-        credentials: 'include' // Include credentials if your API uses cookies
+        credentials: 'include' 
       });
   
       if (response.status === 401) {
-        // Token is invalid or expired
         setShowAuthModal(true);
         return;
       }
@@ -255,111 +263,130 @@ const AlertManagement = () => {
     </div>
   );
 
-  const AlertCard = ({ alert }) => (
-    <div className={`alert-management-card-${viewMode}`}>
-      <div className={`alert-management-product-info-${viewMode}`}>
-        <div className="alert-management-image-wrapper">
-          {alert.productDetail?.image_url ? (
-            <img 
-              src={alert.productDetail.image_url} 
-              alt={alert.productDetail.title}
-              className="alert-management-product-image"
-            />
-          ) : (
-            <div className="alert-management-placeholder">
-              <Bell size={32} />
-            </div>
-          )}
+  const AlertCard = ({ alert }) => {
+    const handleCardClick = (e) => {
+      if (e.target.closest('.alert-management-actions') || 
+          e.target.closest('.alert-management-price-edit')) {
+        return;
+      }
+      navigate('/');
+    };
+  
+    return (
+      <div 
+        className={`alert-management-card-${viewMode}`} 
+        onClick={handleCardClick}
+      >
+        <div className={`alert-management-product-info-${viewMode}`}>
+          <div className="alert-management-image-wrapper">
+            {alert.productDetail?.image_url ? (
+              <img 
+                src={alert.productDetail.image_url} 
+                alt={getDisplayTitle(alert.productDetail)}
+                className="alert-management-product-image"
+              />
+            ) : (
+              <div className="alert-management-placeholder">
+                <Bell size={32} />
+              </div>
+            )}
+          </div>
+          <h3 className="alert-management-product-title">
+            {getDisplayTitle(alert.productDetail)}
+          </h3>
         </div>
-        <h3 className="alert-management-product-title">
-          {alert.productDetail?.title || `${t('alerts.product')} #${alert.product_id}`}
-        </h3>
-      </div>
-      
-      <div className="alert-management-content">
-        <div className="alert-management-price-section">
-          <div className="alert-management-price-current">
-            <label className="alert-management-price-label">{t('alerts.currentPrice')}</label>
-            <span className="alert-management-price-value">
-              {formatCurrency(alert.productDetail?.price || 0)}
-            </span>
+        
+        <div className="alert-management-content">
+          <div className="alert-management-price-section">
+            <div className="alert-management-price-current">
+              <label className="alert-management-price-label">{t('alerts.currentPrice')}</label>
+              <span className="alert-management-price-value">
+                {formatCurrency(alert.productDetail?.price || 0)}
+              </span>
+            </div>
+            
+            <div className="alert-management-price-threshold">
+              <label className="alert-management-price-label">{t('alerts.alertPrice')}</label>
+              {editingAlert === alert.alert_id ? (
+                <div className="alert-management-price-edit">
+                  <input
+                    key={`price-input-${alert.alert_id}`}
+                    type="number"
+                    value={newThresholdPrice}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || (!isNaN(value) && parseFloat(value) >= 0)) {
+                        setNewThresholdPrice(value);
+                      }
+                    }}
+                    className="alert-management-input"
+                    autoFocus
+                    min="0"
+                    step="any"
+                    dir="ltr"
+                    placeholder={t('alerts.newThreshold')}
+                  />
+                </div>
+              ) : (
+                <span className="alert-management-price-value">
+                  {formatCurrency(alert.threshold_price)}
+                </span>
+              )}
+            </div>
           </div>
           
-          <div className="alert-management-price-threshold">
-            <label className="alert-management-price-label">{t('alerts.alertPrice')}</label>
+          <div className="alert-management-actions">
             {editingAlert === alert.alert_id ? (
-              <div className="alert-management-price-edit">
-                <input
-                  key={`price-input-${alert.alert_id}`}
-                  type="number"
-                  value={newThresholdPrice}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '' || (!isNaN(value) && parseFloat(value) >= 0)) {
-                      setNewThresholdPrice(value);
-                    }
+              <>
+                <button 
+                  className="alert-management-btn-save"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUpdateAlert(alert.alert_id);
                   }}
-                  className="alert-management-input"
-                  autoFocus
-                  min="0"
-                  step="any"
-                  dir="ltr"
-                  placeholder={t('alerts.newThreshold')}
-                />
-              </div>
+                >
+                  {t('common.save')}
+                </button>
+                <button 
+                  className="alert-management-btn-cancel"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingAlert(null);
+                    setNewThresholdPrice('');
+                  }}
+                >
+                  {t('common.cancel')}
+                </button>
+              </>
             ) : (
-              <span className="alert-management-price-value">
-                {formatCurrency(alert.threshold_price)}
-              </span>
+              <>
+                <button
+                  className="alert-management-btn-edit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingAlert(alert.alert_id);
+                    setNewThresholdPrice(alert.threshold_price.toString());
+                  }}
+                >
+                  {t('alerts.editAlert')}
+                </button>
+                <button
+                  className="alert-management-btn-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDeleteModal(true);
+                    setAlertToDelete(alert.alert_id);
+                  }}
+                >
+                  {t('alerts.removeAlert')}
+                </button>
+              </>
             )}
           </div>
         </div>
-        
-        <div className="alert-management-actions">
-          {editingAlert === alert.alert_id ? (
-            <>
-              <button 
-                className="alert-management-btn-save"
-                onClick={() => handleUpdateAlert(alert.alert_id)}
-              >
-                {t('common.save')}
-              </button>
-              <button 
-                className="alert-management-btn-cancel"
-                onClick={() => {
-                  setEditingAlert(null);
-                  setNewThresholdPrice('');
-                }}
-              >
-                {t('common.cancel')}
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                className="alert-management-btn-edit"
-                onClick={() => {
-                  setEditingAlert(alert.alert_id);
-                  setNewThresholdPrice(alert.threshold_price.toString());
-                }}
-              >
-                {t('alerts.editAlert')}
-              </button>
-              <button
-                className="alert-management-btn-delete"
-                onClick={() => {
-                  setShowDeleteModal(true);
-                  setAlertToDelete(alert.alert_id);
-                }}
-              >
-                {t('alerts.removeAlert')}
-              </button>
-            </>
-          )}
-        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className={`alert-management-container ${isRTL ? 'rtl' : ''}`}>
@@ -380,7 +407,7 @@ const AlertManagement = () => {
           </p>
           <button 
             className="alert-management-btn-primary"
-            onClick={() => navigate('/search')}
+            onClick={() => navigate('/')}
           >
             {t('alerts.browseProducts')}
           </button>

@@ -8,6 +8,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getCategoryById } from '../Pages/categories';
+import ProductAlert from '../Components/ProductAlert/ProductAlert';
 
 function valuetext(value) {
     return `${value} SAR`;
@@ -40,6 +41,17 @@ const CategoryProducts = () => {
         { id: '2', translations: { en: 'Jarir', ar: 'جرير' }, icon: Jarir  },
         { id: '3', translations: { en: 'Extra', ar: 'اكسترا' }, icon: Extra  }
     ];
+
+    const getDisplayTitle = (result) => {
+        if (!result) return '';
+        
+        if (language === 'ar') {
+            return result.arabic_title || result.title || '';
+        }
+        return result.title || '';
+    };
+
+
 
     const toggleFilters = () => {
         setIsFiltersCollapsed((prev) => !prev);
@@ -222,14 +234,13 @@ const CategoryProducts = () => {
             </div>
     
             <div className="main-content">
-            <div className="results-header">
-                        <h1>{categoryName}</h1>
-
-                        <p className="results-count">
-                    {totalResults > 0 
-                        ? t('search.showing').replace('{{shown}}', results.length).replace('{{total}}', totalResults)
-                        : t('common.noResults')}
-                </p>
+                <div className="results-header">
+                    <h1>{categoryName}</h1>
+                    <p className="results-count">
+                        {totalResults > 0 
+                            ? t('search.showing').replace('{{shown}}', results.length).replace('{{total}}', totalResults)
+                            : t('common.noResults')}
+                    </p>
                 </div>
 
                 <div className="product-grid">
@@ -258,46 +269,50 @@ const CategoryProducts = () => {
                                 onClick={() => handleProductClick(result.product_id)}
                             >
                                 <div className="product-image-container">
+                                    <ProductAlert productId={result.product_id} currentPrice={result.price} />
+                                
                                     <img 
                                         src={result.image_url} 
-                                        alt={result.title}
+                                        alt={getDisplayTitle(result)}
                                         className="product-image"
                                     />
                                 </div>
-                                <h3 className="product-title">{result.title}</h3>
+                                <h3 className="product-title">{getDisplayTitle(result)}</h3>
                                 <div className="product-info">
                                     <div className="price-availability">
-                                    <div className="price-container">
-                                        {result.price !== null ? (
-                                            <>
-                                                {discount && (
-                                                    <>
-                                                        <span className="old-price">
-                                                            {formatCurrency(result.last_old_price)}
-                                                        </span>
-                                                        <span className="discount-badge">
-                                                            {discount.toFixed(0)}% {language === 'ar' ? 'خصم' : 'OFF'}
-                                                        </span>
-                                                    </>
-                                                )}
-                                                <p className={priceClasses}>
-                                                    {formatCurrency(result.price)}
+                                        <div className="price-container">
+                                            {result.price !== null ? (
+                                                <>
+                                                    {discount && (
+                                                        <>
+                                                            <span className="old-price">
+                                                                {formatCurrency(result.last_old_price)}
+                                                            </span>
+                                                            <span className="discount-badge-search">
+                                                                {discount.toFixed(0)}% {language === 'ar' ? 'خصم' : 'OFF'}
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                    <p className={priceClasses}>
+                                                        {formatCurrency(result.price)}
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <p className="price-not-available">
+                                                    {language === 'ar' ? 'السعر غير متوفر' : 'Price not available'}
                                                 </p>
-                                            </>
-                                        ) : (
-                                            <p className="price-not-available">
-                                                {language === 'ar' ? 'السعر غير متوفر' : 'Price not available'}
-                                            </p>
-                                        )}
-                                    </div>
+                                            )}
+                                        </div>
                                         {!isAvailable && result.price !== null && (
-                                            <span className="availability-status">Out of Stock</span>
+                                            <span className="availability-status">
+                                                {language === 'ar' ? 'غير متوفر' : 'Out of Stock'}
+                                            </span>
                                         )}
                                     </div>
                                     {result.store_id && (
                                         <img 
                                             src={getStoreIcon(result.store_id)} 
-                                            alt="Store" 
+                                            alt={t('common.storeLogo')} 
                                             className="store-icon"
                                         />
                                     )}
@@ -323,7 +338,7 @@ const CategoryProducts = () => {
                 <button 
                     className="scroll-to-top" 
                     onClick={scrollToTop}
-                    aria-label="Scroll to top"
+                    aria-label={t('common.scrollToTop')}
                 >
                     ↑
                 </button>

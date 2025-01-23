@@ -117,7 +117,10 @@ const translations = {
             serverError: "Unable to create alert. Please try again.",
             removeAlertConfirm: "Are you sure you want to remove this price alert? You won't receive notifications for this product anymore.",
             removeAlert: "Remove Price Alert",
-            remove: "Yes, Remove Alert"
+            remove: "Yes, Remove Alert",
+            triggered: "Triggered Alerts",
+            manageAlerts:"Manage Alerts",
+            noTriggered:"You Don't Have Triggered Alerts"
             
         },
         footer: {
@@ -237,7 +240,11 @@ const translations = {
             serverError: "تعذر إنشاء التنبيه. يرجى المحاولة مرة أخرى.",
             removeAlertConfirm: "هل أنت متأكد من إزالة تنبيه السعر هذا؟ لن تتلقى إشعارات لهذا المنتج بعد الآن.",
             removeAlert: "إزالة تنبيه السعر",
-            remove: "نعم، إزالة التنبيه"
+            remove: "نعم، إزالة التنبيه",
+            triggered: "إشعارات التنبيهات",
+            manageAlerts:"إدارة التنبيهات",
+            noTriggered:"لا يوجد لديك إشعارات"
+
           },
         // Product
         product: {

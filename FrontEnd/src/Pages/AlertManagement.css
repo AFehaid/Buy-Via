@@ -80,6 +80,7 @@
   }
   
   .alert-management-card-list:hover {
+    cursor: pointer;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
@@ -192,6 +193,7 @@
   }
   
   .alert-management-card-grid:hover {
+    cursor: pointer;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }

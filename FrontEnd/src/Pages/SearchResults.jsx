@@ -8,6 +8,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getCategoryList, getCategoryById } from '../Pages/categories';
+import ProductAlert from '../Components/ProductAlert/ProductAlert';
 
 
 
@@ -198,6 +199,14 @@ const fetchResults = useCallback(async () => {
         window.location.href = `/product/${productId}`;
     };
 
+    const getDisplayTitle = (result) => {
+        if (!result) return '';
+        
+        if (language === 'ar') {
+            return result.arabic_title || result.title || '';
+        }
+        return result.title || '';
+    };
     return (
         <div className={`search-container ${language === 'ar' ? 'rtl' : ''}`}>
             <div className="filters-header" onClick={toggleFilters}>
@@ -347,13 +356,16 @@ const fetchResults = useCallback(async () => {
                                 onClick={() => handleProductClick(result.product_id)}
                             >
                                 <div className="product-image-container">
+                                <ProductAlert productId={result.product_id} currentPrice={result.price} />
+
                                     <img 
                                         src={result.image_url} 
-                                        alt={result.title}
+                                        alt={getDisplayTitle(result)}
                                         className="product-image"
                                     />
+
                                 </div>
-                                <h3 className="product-title">{result.title}</h3>
+                                <h3 className="product-title">{getDisplayTitle(result)}</h3>
                                 <div className="product-info">
                                     <div className="price-availability">
                                     <div className="price-container">
@@ -364,7 +376,7 @@ const fetchResults = useCallback(async () => {
                                                         <span className="old-price">
                                                             {formatCurrency(result.last_old_price)}
                                                         </span>
-                                                        <span className="discount-badge">
+                                                        <span className="discount-badge-search">
                                                             {discount.toFixed(0)}% {language === 'ar' ? 'خصم' : 'OFF'}
                                                         </span>
                                                     </>

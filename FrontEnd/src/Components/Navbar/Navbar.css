@@ -74,7 +74,18 @@
     border-radius: 8px;
     transition: all 0.3s ease;
 }
-
+.alert-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #ef4444;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    min-width: 18px;
+    text-align: center;
+}
 .nav-links .nav-home:hover {
     background-color: rgba(255, 255, 255, 0.1);
 
@@ -290,7 +301,52 @@
     right: 0;
     left: 0;
   }
+  .alerts-header {
+    padding: 10px 16px;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    background-color: #f8f9fa;
+}
+.manage-alerts-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px 16px;
+    color: #2563eb !important;
+    font-weight: 500;
+    border-top: 1px solid #eee;
+    transition: all 0.2s ease;
+    background-color: #f8f9fa;
+}
+.manage-alerts-btn:hover {
+    background-color: #e9ecef;
+    color: #1d4ed8 !important;
+}
 
+.manage-alerts-btn:active {
+    background-color: #e2e8f0;
+}
+
+.dropdown-divider {
+    margin: 0;
+    border-color: #eee;
+}
+
+.no-alerts {
+    color: #666;
+    font-style: italic;
+    padding: 12px 16px;
+    text-align: center;
+}
+
+
+.rtl .alerts-header,
+.rtl .manage-alerts-btn,
+.rtl .no-alerts {
+    text-align: right;
+}
   .account-btn, .alerts-btn {
     display: flex;
     align-items: center;

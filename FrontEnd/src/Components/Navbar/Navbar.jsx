@@ -19,7 +19,7 @@ const Navbar = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { isLoggedIn, logout } = useAuth();
+    const { isLoggedIn,token, logout } = useAuth();
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showSignUpModal, setShowSignUpModal] = useState(false);
     const [alerts, setAlerts] = useState([]);
@@ -50,10 +50,12 @@ const Navbar = () => {
     };
 
     useEffect(() => {
-        if (isLoggedIn) {
+        if (isLoggedIn && token) {
             fetchAlerts();
+        } else {
+            setAlerts([]); // Clear alerts when logged out
         }
-    }, [isLoggedIn, alertsVersion]);
+    }, [isLoggedIn, token, alertsVersion]);
 
 
     const renderAlertItem = (alert) => (
@@ -83,24 +85,21 @@ const Navbar = () => {
         </Dropdown.Item>
     );
 
-    // WIP !!
     const fetchProductDetails = async (product_id) => {
         try {
-            const token = localStorage.getItem('token'); // Get the token from local storage
             const response = await fetch(`http://localhost:8000/search/${product_id}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`, // Send the token in the headers
+                    'Authorization': `Bearer ${token}`
                 },
+                credentials: 'include'
             });
+            
             if (response.ok) {
-                const data = await response.json();
-                return data;
-            } else {
-                console.error('Failed to fetch product details');
-                return null;
+                return await response.json();
             }
+            return null;
         } catch (error) {
             console.error('Error fetching product details:', error);
             return null;
@@ -108,32 +107,16 @@ const Navbar = () => {
     };
 
     const fetchAlerts = async () => {
+        if (!isLoggedIn || !token) return;
+
         try {
-            const token = localStorage.getItem('token'); // Get the token from local storage
-    
-            // Fetch the logged-in user's details
-            const userResponse = await fetch('http://localhost:8000/auth/me', {
+            const alertsResponse = await fetch('http://localhost:8000/alerts/triggered', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${token}`
                 },
-            });
-    
-            if (!userResponse.ok) {
-                throw new Error('Failed to fetch user details');
-            }
-    
-            const userData = await userResponse.json();
-            const userId = userData.user.id; // Extract the user ID
-    
-            // Fetch alerts for the logged-in user
-            const alertsResponse = await fetch(`http://localhost:8000/alerts/?user_id=${userId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
+                credentials: 'include'
             });
     
             if (alertsResponse.ok) {
@@ -146,19 +129,21 @@ const Navbar = () => {
                         return {
                             ...alert,
                             product_id: productDetails?.product_id || '',
-                            product_name: truncatedName, // Use truncated name
+                            product_name: truncatedName,
                             product_picture: productDetails?.image_url || '',
                             product_price: productDetails?.price || 0,
                         };
                     })
                 );
                 setAlerts(alertsWithProductDetails);
-            } else {
-                console.error('Failed to fetch alerts');
             }
         } catch (error) {
             console.error('Error fetching alerts:', error);
         }
+    };
+
+    const navigateToAlerts = () => {
+        navigate('/alerts');
     };
 
     const handleProductClick = (productId) => {
@@ -267,25 +252,49 @@ const Navbar = () => {
                     </button>
 
                     {isLoggedIn && (
-                        <Dropdown 
-                            className='dropdown' 
-                            drop={isRTL ? 'down-start' : 'down-end'}
-                            align={isRTL ? 'start' : 'end'}
-                        >
-                            <Dropdown.Toggle as="button" className="alerts-btn">
-                                <Bell size={isMobile ? 24 : 30} color='white'/>
-                            </Dropdown.Toggle>
-                            <Dropdown.Menu className='dropdown-menu'>
-                                {alerts.length > 0 ? (
-                                    alerts.map(alert => renderAlertItem(alert))
-                                ) : (
-                                    <Dropdown.Item className='dropdown-items'>
-                                        {t('common.noResults')}
-                                    </Dropdown.Item>
-                                )}
-                            </Dropdown.Menu>
-                        </Dropdown>
-                    ) }
+                <Dropdown 
+                    className='dropdown' 
+                    drop={isRTL ? 'down-start' : 'down-end'}
+                    align={isRTL ? 'start' : 'end'}
+                >
+                    <Dropdown.Toggle as="button" className="alerts-btn">
+                        <Bell size={isMobile ? 24 : 30} color='white'/>
+                        {alerts.length > 0 && (
+                            <span className="alert-badge">{alerts.length}</span>
+                        )}
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu className='dropdown-menu'>
+                        <div className="alerts-header">
+                            <span>{t('alerts.triggered')}</span>
+                        </div>
+                        {alerts.length > 0 ? (
+                            <>
+                                {alerts.map(alert => renderAlertItem(alert))}
+                                <Dropdown.Divider />
+                                <Dropdown.Item 
+                                    className='manage-alerts-btn'
+                                    onClick={navigateToAlerts}
+                                >
+                                    {t('alerts.manageAlerts')}
+                                </Dropdown.Item>
+                            </>
+                        ) : (
+                            <>
+                                <Dropdown.Item className='dropdown-items no-alerts'>
+                                    {t('alerts.noTriggered')}
+                                </Dropdown.Item>
+                                <Dropdown.Divider />
+                                <Dropdown.Item 
+                                    className='manage-alerts-btn'
+                                    onClick={navigateToAlerts}
+                                >
+                                    {t('alerts.manageAlerts')}
+                                </Dropdown.Item>
+                            </>
+                        )}
+                    </Dropdown.Menu>
+                </Dropdown>
+            )}
 
                     <Dropdown 
                         className='dropdown' 

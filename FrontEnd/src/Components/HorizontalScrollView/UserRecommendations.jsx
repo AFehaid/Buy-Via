@@ -65,7 +65,12 @@ const UserRecommendations = () => {
     };
     return storeIcons[store_id] || null;
   };
-
+  const getDisplayTitle = (item) => {
+    if (isRTL) {
+      return item.arabic_title || item.title;
+    }
+    return item.title;
+  };
   const calculateDiscount = (currentPrice, oldPrice) => {
     if (!currentPrice || !oldPrice || oldPrice <= currentPrice) return null;
     const discount = ((oldPrice - currentPrice) / oldPrice) * 100;
@@ -129,12 +134,12 @@ const UserRecommendations = () => {
               <div className="item-image-container">
                 <img 
                   src={item.image_url || "/api/placeholder/150/150"} 
-                  alt={item.title} 
+                  alt={getDisplayTitle(item)} 
                   loading="lazy" 
                 />
                 <ProductAlert productId={item.product_id} currentPrice={item.price} />
               </div>
-              <h3>{item.title}</h3>
+              <h3>{getDisplayTitle(item)}</h3>
               <div className="item-footer">
                 <div className="price-container">
                   {formatPrice(item)}

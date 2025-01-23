@@ -23,6 +23,16 @@ const ProductDetails = () => {
     const { t, isRTL, formatCurrency, language } = useLanguage();
     const navigate = useNavigate();
 
+    const getDisplayTitle = (product) => {
+        if (!product) return '';
+        
+        if (language === 'ar') {
+            return product.arabic_title || product.title || '';
+        }
+        return product.title || '';
+    };
+
+
     const getStoreLogo = (storeId) => {
         const storeLogos = {
             1: AMZN,
@@ -114,7 +124,7 @@ const ProductDetails = () => {
                     <div className="pd-image-wrapper">
                         <img
                             src={product.image_url}
-                            alt={product.title}
+                            alt={getDisplayTitle(product)}
                             className="pd-image"
                             onError={(e) => { e.target.src = 'https://via.placeholder.com/400'; }}
                         />
@@ -128,7 +138,7 @@ const ProductDetails = () => {
                     >
                         {categoryInfo ? `${categoryInfo.subcategory}` : t('common.category')}
                     </span>
-                        <h1 className="pd-product-title">{product.title}</h1>
+                        <h1 className="pd-product-title">{getDisplayTitle(product)}</h1>
 
                         <div className="pd-timestamp">
                             <Clock className="pd-icon-small" />

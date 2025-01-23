@@ -47,7 +47,12 @@ const RelatedProducts = ({ category }) => {
   const handleViewProduct = (productId) => {
     navigate(`/product/${productId}`);
   };
-
+  const getDisplayTitle = (item) => {
+    if (isRTL) {
+      return item.arabic_title || item.title;
+    }
+    return item.title;
+  };
   const getStoreIcon = (store_id) => {
     const storeIcons = {
       1: AMZN,
@@ -118,10 +123,10 @@ const RelatedProducts = ({ category }) => {
               onClick={() => handleViewProduct(item.product_id)}
             >
               <div className="item-image-container">
-                <img src={item.image_url} alt={item.title} loading="lazy" />
+                <img src={item.image_url} alt={getDisplayTitle(item)} loading="lazy" />
                 <ProductAlert productId={item.product_id} currentPrice={item.price} />
               </div>
-              <h3>{item.title}</h3>
+              <h3>{getDisplayTitle(item)}</h3>
               <div className="item-footer">
                 <div className="price-container">
                   {formatPrice(item)}
