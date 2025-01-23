@@ -88,51 +88,47 @@ class SearchResponse(BaseModel):
 # ----------------------------------------
 def get_search_query(db: Session, query: str, sort_by: str):
     """
-    Build the search query while carefully handling short tokens
-    and also checking Arabic titles in the translations table.
+    Build a search query requiring ALL words in `query` to appear
+    in the product title or Arabic translation. Also keeps accessory
+    logic to push accessories lower if the user query doesn't
+    explicitly mention accessories.
     """
-    # We'll do an OUTER JOIN on ProductTitleTranslation (language='ar')
-    # so we can search in Arabic translations as well.
+    from sqlalchemy.sql import literal
     ar_trans = aliased(ProductTitleTranslation)
 
-    # Prepare (condition, weight) pairs for multi-word search
+    # Split the user query into words
     words = query.lower().split()
-    conditions = []
 
-    # Full-query match (title OR arabic_translation)
-    full_condition = or_(
-        Product.title.ilike(f"%{query}%"),
-        and_(ar_trans.language == "ar", ar_trans.translated_title.ilike(f"%{query}%"))
-    )
-    conditions.append((full_condition, 3.0))
-
-    # Word-by-word match
-    for word in words:
-        if len(word) > 1:
-            # multi-char
-            cond = or_(
-                Product.title.ilike(f"%{word}%"),
-                and_(ar_trans.language == "ar", ar_trans.translated_title.ilike(f"%{word}%"))
+    # ---------------------------------------
+    # Build AND condition across all words
+    # ---------------------------------------
+    # e.g. "iphone 16 pro max" => must match *all* words in either
+    # Product.title OR the Arabic translation (where language='ar').
+    # So:
+    #   AND(
+    #     (title ILIKE '%iphone%' OR (lang='ar' AND translated_title ILIKE '%iphone%')),
+    #     (title ILIKE '%16%'     OR (lang='ar' AND translated_title ILIKE '%16%')),
+    #     (title ILIKE '%pro%'    OR (lang='ar' AND translated_title ILIKE '%pro%')),
+    #     (title ILIKE '%max%'    OR (lang='ar' AND translated_title ILIKE '%max%'))
+    #   )
+    #
+    # Only if all words match does the product show up.
+    word_conditions = []
+    for w in words:
+        cond = or_(
+            Product.title.ilike(f"%{w}%"),
+            and_(
+                ar_trans.language == "ar",
+                ar_trans.translated_title.ilike(f"%{w}%")
             )
-            conditions.append((cond, 2.0))
-        else:
-            # single-char
-            cond = or_(
-                Product.title.ilike(f"{word} %"),
-                Product.title.ilike(f"% {word}"),
-                Product.title.ilike(f"% {word} %"),
-                and_(
-                    ar_trans.language == "ar",
-                    or_(
-                        ar_trans.translated_title.ilike(f"{word} %"),
-                        ar_trans.translated_title.ilike(f"% {word}"),
-                        ar_trans.translated_title.ilike(f"% {word} %")
-                    )
-                )
-            )
-            conditions.append((cond, 1.5))
+        )
+        word_conditions.append(cond)
 
-    # Accessory condition => push accessories lower if not in query
+    combined_condition = and_(*word_conditions)
+
+    # ---------------------------------------
+    # Accessory condition => push accessories lower
+    # ---------------------------------------
     accessory_condition = or_(
         *[Product.title.ilike(f"%{acc_keyword}%") for acc_keyword in all_accessories]
     )
@@ -141,32 +137,33 @@ def get_search_query(db: Session, query: str, sort_by: str):
         else_=0
     ).label("is_accessory")
 
-    # Build relevance score
-    relevance_score = sum(
-        case((cond, weight), else_=0.0)
-        for cond, weight in conditions
-    ).label("relevance")
+    # Because all matched products have the same "match strength" (they match all words),
+    # we can keep a simple integer for 'relevance'
+    relevance_score = literal(len(words)).label("relevance")
 
-    # Combine all positive conditions with OR
-    positive_conditions = [cond for cond, weight in conditions if weight > 0]
-
+    # ---------------------------------------
+    # Build the query (no limit inside!)
+    # ---------------------------------------
     combined_query = (
         db.query(
             Product,
             relevance_score.label("relevance"),
-            is_accessory_expr.label("is_accessory")
+            is_accessory_expr.label("is_accessory"),
         )
         .outerjoin(ar_trans, ar_trans.product_id == Product.product_id)
-        .filter(or_(*positive_conditions))  # overall OR for the conditions
+        .filter(combined_condition)
     )
 
-    # Sorting logic
+    # ---------------------------------------
+    # Sorting
+    # ---------------------------------------
     if sort_by == "relevance":
+        # All matched items have same relevance, but we keep to your structure:
         combined_query = combined_query.order_by(asc("is_accessory"), desc("relevance"))
     elif sort_by == "price-low":
         combined_query = combined_query.order_by(
             asc("is_accessory"),
-            case((Product.price.is_(None), 1), else_=0),
+            case((Product.price.is_(None), 1), else_=0),  # put None prices last
             asc(Product.price)
         )
     elif sort_by == "price-high":
@@ -180,10 +177,11 @@ def get_search_query(db: Session, query: str, sort_by: str):
             asc("is_accessory"),
             desc(Product.last_updated)
         )
+    # otherwise, do nothing special beyond is_accessory.
 
-    # Return only rows where relevance > 0
-    return combined_query.filter(relevance_score > 0)
-
+    # IMPORTANT: do not apply limit() here so that further filters
+    # (like availability, price range, etc.) can be added without error.
+    return combined_query
 
 # ----------------------------------------
 # Utility: get_price_history
