@@ -73,6 +73,7 @@ class ProductResponse(BaseModel):
     category_id: int
     group_id: int | None
     arabic_title: Optional[str] = None  # <--- NEW FIELD
+    last_updated: str
 
     class Config:
         from_attributes = True
@@ -225,7 +226,8 @@ def format_product_response(product: Product, last_old_price: float = None) -> d
         "category_id": product.category_id,
         "last_old_price": last_old_price,
         "group_id": product.group_id,
-        "arabic_title": arabic_title  # None if no Arabic translation
+        "arabic_title": arabic_title,  # None if no Arabic translation
+        "last_updated": product.last_updated.strftime("%Y-%m-%d")  # Format to year-month-day
     }
 
 
@@ -257,6 +259,74 @@ def reorder_by_store_round_robin(products: List[Product]) -> List[Product]:
 # Router
 # ----------------------------------------
 router = APIRouter(prefix="/search", tags=["search"])
+
+# ----------------------------------------
+# GET /search/price-comparison/{product_id}
+# ----------------------------------------
+@router.get("/price-comparison/{product_id}", response_model=List[ProductResponse])
+def price_comparison(
+    product_id: int = Path(..., description="The ID of the product to compare prices for"),
+    db: Session = Depends(get_db),
+):
+    """
+    Compare prices of the same product across different stores.
+    - Returns one product per store that belongs to the same group as the given product.
+    - The product selected from each store is the one whose title most closely matches the title of the given product.
+    """
+    # Fetch the product with the given ID
+    product = (
+        db.query(Product)
+        .filter(Product.product_id == product_id)
+        .options(joinedload(Product.translations))
+        .first()
+    )
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Get the group ID of the product
+    group_id = product.group_id
+    if not group_id:
+        raise HTTPException(status_code=404, detail="Product does not belong to any group")
+
+    # Fetch all products in the same group
+    group_products = (
+        db.query(Product)
+        .filter(Product.group_id == group_id)
+        .options(joinedload(Product.translations))
+        .all()
+    )
+
+    # Group products by store
+    store_products = {}
+    for p in group_products:
+        if p.store_id not in store_products:
+            store_products[p.store_id] = []
+        store_products[p.store_id].append(p)
+
+    # Select one product per store with the most matching title
+    selected_products = []
+    for store_id, products in store_products.items():
+        # Find the product with the most matching title
+        best_match = None
+        best_score = -1
+        for p in products:
+            # Simple matching score based on the number of common words
+            common_words = len(set(product.title.lower().split()) & set(p.title.lower().split()))
+            if common_words > best_score:
+                best_match = p
+                best_score = common_words
+        if best_match:
+            selected_products.append(best_match)
+
+    # Get price history for the selected products
+    product_ids = [p.product_id for p in selected_products]
+    last_old_prices = get_price_history(db, product_ids)
+
+    # Format the response
+    return [
+        format_product_response(prod, last_old_prices.get(prod.product_id))
+        for prod in selected_products
+    ]
 
 
 # ----------------------------------------
