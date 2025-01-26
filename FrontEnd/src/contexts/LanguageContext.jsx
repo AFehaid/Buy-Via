@@ -73,6 +73,23 @@ const translations = {
             unavailable: 'This product is currently unavailable',
             relatedProducts: "Related Products",
             recommendations: "Recommended for You"        },
+        
+        contact:{
+            getInTouch: 'Get in Touch',
+            dropMessage: "We'd love to hear from you. Drop us a message!",
+            name: 'Your Name',
+            email: 'Your Email', 
+            subject: 'Subject',
+            message: 'Your Message',
+            sending: 'Sending...',
+            sendMessage: 'Send Message',
+            contactInfo: 'Contact Information',
+            responseTime: 'We typically respond within 24-48 hours.',
+            messageSent: 'Message Sent!',
+            thankYou: 'Thank you for reaching out. We will get back to you as soon as possible.',
+            backHome: 'Back to Home',
+            browseProducts: 'Browse Products'
+        },
         // Common
         common: {
             loading: 'Loading...',
@@ -294,6 +311,22 @@ const translations = {
             category: 'الفئة',
             via:'عبر',
             storeLogo: 'شعار المتجر',
+        },
+        contact:{
+            getInTouch: 'تواصل معنا',
+            dropMessage: 'يسعدنا سماع رأيك. اترك لنا رسالة!',
+            name: 'اسمك',
+            email: 'بريدك الإلكتروني',
+            subject: 'الموضوع',
+            message: 'رسالتك',
+            sending: 'جاري الإرسال...',
+            sendMessage: 'إرسال الرسالة',
+            contactInfo: 'معلومات التواصل',
+            responseTime: 'نرد عادةً خلال 24-48 ساعة.',
+            messageSent: 'تم إرسال الرسالة!',
+            thankYou: 'شكراً لتواصلك معنا. سنرد عليك في أقرب وقت ممكن.',
+            backHome: 'العودة للرئيسية',
+            browseProducts: 'تصفح المنتجات'
         },
         search: {
             resultsFor: ' نتيجة البحث لـ "{{query}}"',

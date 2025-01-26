@@ -216,8 +216,8 @@ const Navbar = () => {
                             <li><a className='nav-home' href="/">{t('navigation.home')}</a></li>
                             <li><a className='nav-home' href="/deals">{t('navigation.deals')}</a></li>
                             <li>
-                                <a className='nav-home' href="/new">
-                                    {t('navigation.newArrivals')}
+                                <a className='nav-home' href="/contact">
+                                    {t('footer.contactUs')}
                                 </a>
                             </li>
                         </ul>

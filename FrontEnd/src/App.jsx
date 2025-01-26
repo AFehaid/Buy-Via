@@ -6,7 +6,7 @@ import api from './api'
 import Navbar from "./Components/Navbar/Navbar";
 import Logo from "./Components/Logo/Logo";
 import Home from './Pages/home';
-import Contact_us from './Pages/contact_us';
+import Contact_us from './Pages/ContactForm';
 import Login from './Pages/login';
 import SearchResults from './Pages/SearchResults';
 import Img_Slider from './Components/Img_Slider/Img_Slider'
@@ -18,7 +18,8 @@ import CategoryProducts from "./Pages/CategoryProducts";
 import AlertManagement from "./Pages/AlertManagement";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { AlertProvider } from "./contexts/AlertContext";
-
+import ContactForm from "./Pages/ContactForm";
+import ContactSuccess from "./Pages/ContactSuccess";
 
 
 function App() {
@@ -45,6 +46,8 @@ function App() {
       <Route path="/category/:categoryId" element={<CategoryProducts />} />
       <Route path="Search" element={<SearchResults />} />
       <Route path="/product/:productId" element={<ProductDetails />} />
+      <Route path="/contact" element={<ContactForm />} />
+      <Route path="/contact/success" element={<ContactSuccess />} />
 
       </Routes>
       <Footer/>
