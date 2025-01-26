@@ -28,6 +28,7 @@ def continuously_monitor_alerts(interval_seconds: int = 60):
                 if a.product and a.product.price is not None:
                     if a.product.price <= a.threshold_price:
                         a.alert_status = "triggered"
+                        #a.user.send_alert_email(a.product)
             db.commit()
         time.sleep(interval_seconds)
 

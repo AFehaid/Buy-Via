@@ -33,7 +33,10 @@ class Token(BaseModel):
     token_type: str
 
 def authenticate_user(username: str, password: str, db: Session):
-    user = db.query(User).filter(User.username == username).first()
+    # Check if the input matches either the username or email
+    user = db.query(User).filter(
+        (User.username == username) | (User.email == username)
+    ).first()
     if not user or not bcrypt_context.verify(password, user.password):
         return False
     return user
@@ -64,6 +67,13 @@ async def register_user(user: UserCreateRequest, db: db_dependency):
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Username or Email already exists")
+
+    # Validate password length
+    if len(user.password) <= 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be more than 6 characters long"
+        )
 
     # Create and save the new user
     hashed_password = bcrypt_context.hash(user.password)
