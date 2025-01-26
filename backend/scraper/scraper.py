@@ -250,31 +250,38 @@ class AmazonScraper(StoreScraper):
                     """Extract product details using BeautifulSoup."""
                     page_source = self.driver.page_source
                     soup = BeautifulSoup(page_source, "html.parser")
+                    
+                    # Adjusted selector for product elements
                     product_elements = soup.select("div.s-result-item[data-component-type='s-search-result']")
-
+                    
                     for product in product_elements:
                         try:
-                            # Extract title and link
-                            title_elem = product.select_one("a.a-link-normal.s-line-clamp-4")
-                            if not title_elem:
-                                title_elem = product.select_one("h2 a.a-link-normal")
-                            title = title_elem.text.strip()
-                            link = f"https://www.amazon.sa{title_elem['href']}"
-
-                            # Extract price
-                            price = "N/A"
+                            # Locate the product title anchor
+                            title_anchor = product.select_one("a.a-link-normal.s-line-clamp-4.s-link-style.a-text-normal")
+                            if not title_anchor:
+                                continue  # Skip if no title anchor found
+                            
+                            # Look for the nested <h2> within the anchor
+                            title_h2 = title_anchor.select_one("h2.a-size-base-plus.a-spacing-none.a-color-base.a-text-normal")
+                            if title_h2:
+                                title = title_h2.get_text(strip=True)
+                            else:
+                                title = title_anchor.get_text(strip=True)
+                            
+                            # Product link
+                            link = f"https://www.amazon.sa{title_anchor['href']}"
+                            
+                            # Product price
                             price_elem = product.select_one("span.a-price span.a-offscreen")
-                            if price_elem:
-                                raw_price = price_elem.text.strip()
-                                price = self.normalize_price(raw_price)
-
-                            # Extract image URL
+                            price = self.normalize_price(price_elem.get_text(strip=True)) if price_elem else "N/A"
+                            
+                            # Product image
                             image_elem = product.select_one("img.s-image")
                             image_url = image_elem["src"] if image_elem else ""
-
-                            # Add unique product
+                            
+                            # Deduplicate products
                             product_key = (title, link)
-                            if product_key not in unique_products and title:
+                            if product_key not in unique_products:
                                 unique_products.add(product_key)
                                 yield {
                                     "store": self.store_name,
@@ -282,10 +289,12 @@ class AmazonScraper(StoreScraper):
                                     "link": link,
                                     "price": price,
                                     "info": "N/A",
-                                    "image_url": image_url
+                                    "image_url": image_url,
                                 }
-                        except AttributeError as e:
-                            print(f"Failed to extract some product details: {e}. Skipping...")
+                        except Exception as e:
+                            print(f"Error extracting product details: {e}. Skipping product...")
+
+
 
                 yield from extract_products()
 
