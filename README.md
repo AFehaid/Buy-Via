@@ -27,8 +27,7 @@ DEPLOYMENT_ENVIRONMENT=DEV
 ```
 
 2. **Classification Model**:
-   - The pre-trained classification model is not included in the repository due to its large size. If needed, please contact the project owner at `your-email@example.com` to request access to the model file.
-
+   - The pre-trained classification model is not included in the repository due to its large size.
 3. **Database Setup**:
    - The application is configured to connect to a PostgreSQL database hosted on AWS RDS. If you want to run the application locally, you can:
      - Set up a local PostgreSQL or SQLite instance.
