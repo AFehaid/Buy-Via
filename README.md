@@ -131,29 +131,6 @@ npm run dev
     cd Buy-Via
     ```
 
-## Environment Variables
-The backend requires a `.env` file in the `backend` directory with the following structure:
-
-```plaintext
-# Auth settings
-AUTH_SECRET_KEY=<secret_key>
-AUTH_ALGORITHM=HS256
-
-# Backend settings
-API_URL=http://localhost:5173
-DB_URL=sqlite:///./backend/buy_via.db
-
-# Deployment environment
-DEPLOYMENT_ENVIRONMENT=DEV
-
-# Email settings
-SMTP_HOST=<smtp_host>
-SMTP_PORT=<smtp_port>
-SMTP_USERNAME=<smtp_username>
-SMTP_PASSWORD=<smtp_password>
-
-```
-
 1. **Navigate to the `backend` directory**:
     ```bash
     cd backend
