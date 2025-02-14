@@ -10,6 +10,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { getCategoryList, getCategoryById } from '../Pages/categories';
 import ProductAlert from '../Components/ProductAlert/ProductAlert';
 import { useAuth } from '../contexts/AuthProvider';
+import { baseURL } from "../api"; 
 
 
 
@@ -91,7 +92,7 @@ const SearchResults = () => {
             const storeFilter = selectedStore === 'all' ? '' : selectedStore;
             const categoryFilter = selectedCategory === 'all' ? '' : selectedCategory;
     
-            url = `http://localhost:8000/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}${storeFilter ? `&store_filter=${storeFilter}` : ''}${categoryFilter ? `&category_id=${categoryFilter}` : ''}${inStockOnly ? '&in_stock_only=true' : ''}`;
+            url = `${baseURL}/search?query=${query}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}${storeFilter ? `&store_filter=${storeFilter}` : ''}${categoryFilter ? `&category_id=${categoryFilter}` : ''}${inStockOnly ? '&in_stock_only=true' : ''}`;
     
             const response = await fetch(url, {
                 headers: {

@@ -13,6 +13,7 @@ import {
     ChevronDown,
 } from 'lucide-react';
 import { useAlertRefresh } from '../../contexts/AlertContext';
+import { baseURL } from "../../api";
 
 const Navbar = () => {
     const { language, toggleLanguage, t, isRTL, formatCurrency } = useLanguage();
@@ -87,7 +88,7 @@ const Navbar = () => {
 
     const fetchProductDetails = async (product_id) => {
         try {
-            const response = await fetch(`http://localhost:8000/search/${product_id}`, {
+            const response = await fetch(`${baseURL}/search/${product_id}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -110,7 +111,7 @@ const Navbar = () => {
         if (!isLoggedIn || !token) return;
 
         try {
-            const alertsResponse = await fetch('http://localhost:8000/alerts/triggered', {
+            const alertsResponse = await fetch(`${baseURL}/alerts/triggered`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

@@ -6,6 +6,7 @@ import AuthModal from './login.jsx';
 import './AlertManagement.css';
 import LoadingPage from './LoadingPage.jsx';
 import { useNavigate } from "react-router-dom";
+import { baseURL } from "../api";
 
 
 const AlertManagement = () => {
@@ -40,7 +41,7 @@ const AlertManagement = () => {
   // Fetch product details
   const fetchProductDetails = async (productId) => {
     try {
-      const response = await fetch(`http://localhost:8000/search/${productId}`);
+      const response = await fetch(`${baseURL}/search/${productId}`);
       if (!response.ok) throw new Error('Failed to fetch product details');
       const data = await response.json();
       return data;
@@ -68,7 +69,7 @@ const AlertManagement = () => {
       }
 
 
-      const userResponse = await fetch('http://localhost:8000/auth/me', {
+      const userResponse = await fetch(`${baseURL}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${currentToken}`
         },
@@ -85,7 +86,7 @@ const AlertManagement = () => {
       const userData = await userResponse.json();
       const userId = userData.user.id;
 
-      const alertsResponse = await fetch(`http://localhost:8000/alerts/?user_id=${userId}`, {
+      const alertsResponse = await fetch(`${baseURL}/alerts/?user_id=${userId}`, {
         headers: {
           'Authorization': `Bearer ${currentToken}`
         },
@@ -136,7 +137,7 @@ const AlertManagement = () => {
         return;
       }
   
-      const response = await fetch(`http://localhost:8000/alerts/${alertId}`, {
+      const response = await fetch(`${baseURL}/alerts/${alertId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -178,7 +179,7 @@ const AlertManagement = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/alerts/${alertId}`, {
+      const response = await fetch(`${baseURL}/alerts/${alertId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${currentToken}`

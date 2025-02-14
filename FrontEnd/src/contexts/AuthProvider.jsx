@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useState, useEffect } from "react";
 import { jwtDecode } from 'jwt-decode';
-
+import { baseURL } from "../api"; 
 const AuthContext = createContext();
 
 const AuthProvider = ({ children }) => {
@@ -52,7 +52,7 @@ const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const response = await fetch("http://localhost:8000/auth/token", {
+      const response = await fetch(`${baseURL}/auth/token`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",

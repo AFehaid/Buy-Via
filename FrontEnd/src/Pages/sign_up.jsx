@@ -3,6 +3,8 @@ import "../Pages/login.css";
 import React, { useState } from "react";
 import axios from "axios"; // Import Axios for API calls
 import qs from 'qs'
+import { baseURL } from "../api"; 
+
 
 const Sign_up = () => {
   const [activeForm, setActiveForm] = useState("signUp");
@@ -37,7 +39,7 @@ const Sign_up = () => {
         console.log("Form Data for Sign In:", formData); // Log the formData
 
 
-        const response = await axios.post("http://localhost:8000/auth/token", qs.stringify({
+        const response = await axios.post(`${baseURL}/auth/token`, qs.stringify({
           username: formData.username,
           password: formData.password,
         }), {
@@ -60,7 +62,7 @@ const Sign_up = () => {
           return;
         }
   
-        const response = await axios.post("http://localhost:8000/auth/register", {
+        const response = await axios.post(`${baseURL}/auth/register`, {
           username: formData.username, // Make sure you send 'username' here too
           email: formData.email,
           password: formData.password,

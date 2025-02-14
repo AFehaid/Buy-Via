@@ -7,6 +7,7 @@ import Extra from "../../assets/Extra.png";
 import AMZN from "../../assets/AMZN.png";
 import { useAuth } from "../../contexts/AuthProvider";
 import ProductAlert from "../ProductAlert/ProductAlert";
+import { baseURL } from "../../api";
 
 const UserRecommendations = () => {
   const [items, setItems] = useState([]);
@@ -21,7 +22,7 @@ const UserRecommendations = () => {
       setLoading(true);
       setError(null);
       try {
-        const url = `http://localhost:8000/search/recommendations`;
+        const url = `${baseURL}/search/recommendations`;
         const response = await fetch(url, {
           credentials: 'include',
         });

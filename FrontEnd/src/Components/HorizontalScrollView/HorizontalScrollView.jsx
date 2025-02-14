@@ -6,6 +6,7 @@ import Jarir from "../../assets/Jarir.png";
 import Extra from "../../assets/Extra.png";
 import AMZN from "../../assets/AMZN.png";
 import ProductAlert from "../ProductAlert/ProductAlert";
+import { baseURL } from "../../api";
 
 const requestQueue = [];
 let isProcessing = false;
@@ -50,7 +51,7 @@ const HorizontalScrollView = ({ prompt, displayTitle }) => {
       setLoading(true);
       setError(null);
       try {
-        const url = `http://localhost:8000/search/quick-search?query=${encodeURIComponent(prompt)}`;
+        const url = `${baseURL}/search/quick-search?query=${encodeURIComponent(prompt)}`;
         
         const data = await queueRequest(url);
 

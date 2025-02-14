@@ -6,6 +6,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import AuthModal from '../../Pages/login';
 import "./ProductAlert.css";
 import { useAlertRefresh } from "../../contexts/AlertContext";
+import { baseURL } from "../../api";
 
 const PriceAlertSuccess = ({ message, isRTL }) => (
   <div className={`pa-success-toast ${isRTL ? 'pa-rtl' : ''}`}>
@@ -135,7 +136,7 @@ const ProductAlert = ({ productId, currentPrice }) => {
   
     setIsLoading(true);
     try {
-      const userResponse = await fetch('http://localhost:8000/auth/me', {
+      const userResponse = await fetch(`${baseURL}/auth/me`, {
         credentials: 'include', // This ensures cookies are sent
         headers: token ? { 'Authorization': `Bearer ${token}` } : {} // Optional header auth
       });
@@ -151,7 +152,7 @@ const ProductAlert = ({ productId, currentPrice }) => {
       const userData = await userResponse.json();
       const userId = userData.user.id;
 
-      const alertsResponse = await fetch(`http://localhost:8000/alerts/?user_id=${userId}`, {
+      const alertsResponse = await fetch(`${baseURL}/alerts/?user_id=${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         },
@@ -198,7 +199,7 @@ const ProductAlert = ({ productId, currentPrice }) => {
     setIsLoading(true);
     try {
       if (isRemove && existingAlert) {
-        const response = await fetch(`http://localhost:8000/alerts/${existingAlert.alert_id}`, {
+        const response = await fetch(`${baseURL}/alerts/${existingAlert.alert_id}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -226,7 +227,7 @@ const ProductAlert = ({ productId, currentPrice }) => {
           throw new Error('Invalid product ID or threshold price');
         }
 
-        const response = await fetch('http://localhost:8000/alerts/', {
+        const response = await fetch(`${baseURL}/alerts/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

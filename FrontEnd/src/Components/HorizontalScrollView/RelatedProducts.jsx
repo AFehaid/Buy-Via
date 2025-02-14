@@ -6,6 +6,7 @@ import Jarir from "../../assets/Jarir.png";
 import Extra from "../../assets/Extra.png";
 import AMZN from "../../assets/AMZN.png";
 import ProductAlert from "../ProductAlert/ProductAlert";
+import { baseURL } from "../../api";
 
 const RelatedProducts = ({ category }) => {
   const [items, setItems] = useState([]);
@@ -19,7 +20,7 @@ const RelatedProducts = ({ category }) => {
       setLoading(true);
       setError(null);
       try {
-        const url = `http://localhost:8000/search/related-products?category_id=${encodeURIComponent(category)}&limit=20`;
+        const url = `${baseURL}/search/related-products?category_id=${encodeURIComponent(category)}&limit=20`;
         const response = await fetch(url);
         const data = await response.json();
         console.log("Backend Response:", data);

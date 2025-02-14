@@ -9,6 +9,7 @@ import Box from '@mui/material/Box';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getCategoryById } from '../Pages/categories';
 import ProductAlert from '../Components/ProductAlert/ProductAlert';
+import { baseURL } from "../api"; 
 
 function valuetext(value) {
     return `${value} SAR`;
@@ -78,7 +79,7 @@ const CategoryProducts = () => {
             const maxPrice = priceRange[1] === 5000 ? 50000 : priceRange[1];
             const storeFilter = selectedStore === 'all' ? '' : selectedStore;
 
-            const url = `http://localhost:8000/search/category-products?category_id=${categoryId}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}${storeFilter ? `&store_filter=${storeFilter}` : ''}${inStockOnly ? '&in_stock_only=true' : ''}`;
+            const url = `${baseURL}/search/category-products?category_id=${categoryId}&page=${page}&page_size=${pageSize}&sort_by=${sortBy}&min_price=${priceRange[0]}&max_price=${maxPrice}${storeFilter ? `&store_filter=${storeFilter}` : ''}${inStockOnly ? '&in_stock_only=true' : ''}`;
 
             const response = await fetch(url);
             if (!response.ok) {

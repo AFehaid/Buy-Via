@@ -3,6 +3,8 @@ import { useAuth } from "../contexts/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../contexts/LanguageContext";
 import "../Pages/login.css";
+import { baseURL } from "../api"; 
+
 
 const AuthModal = ({ mode, onClose }) => {
   const { login } = useAuth();
@@ -46,7 +48,7 @@ const AuthModal = ({ mode, onClose }) => {
           return;
         }
 
-        const response = await fetch("http://localhost:8000/auth/register", {
+        const response = await fetch(`${baseURL}/auth/register`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

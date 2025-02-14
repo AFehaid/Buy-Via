@@ -14,6 +14,8 @@ import './ProductDetails.css';
 import { useAuth } from '../contexts/AuthProvider';
 import LoadingPage from './LoadingPage';
 import ProductAlert from '../Components/ProductAlert/ProductAlert';
+import { baseURL } from "../api"; 
+
 
 const ProductDetails = () => {
     const { isLoggedIn, token } = useAuth();
@@ -34,7 +36,7 @@ const ProductDetails = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const productRes = await fetch(`http://localhost:8000/search/${productId}`, {
+                const productRes = await fetch(`${baseURL}/search/${productId}`, {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
@@ -62,7 +64,7 @@ const ProductDetails = () => {
                 }];
 
                 try {
-                    const comparisonRes = await fetch(`http://localhost:8000/search/price-comparison/${productId}`, {
+                    const comparisonRes = await fetch(`${baseURL}/search/price-comparison/${productId}`, {
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`

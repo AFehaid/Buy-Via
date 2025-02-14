@@ -1,0 +1,6 @@
+Test Case ID,Description,Input,Expected Result,Predicted Result,Status
+TC-CL-001,Known Product Category - Gaming Accessories,PlayStation 5 Stick Module for DualSense Edge Wireless Controller (KSA Version),21,21,Pass
+TC-CL-002,Known Product Category - Printers & Scanners,Office Printer with Fax and Scanner,9,9,Pass
+TC-CL-003,Known Product Category - Smartphones & Cell Phones,Smartphone with 128GB Storage,4,4,Pass
+TC-CL-004,Edge Case - Empty Input,,54,38,Fail
+TC-CL-005,Edge Case - Ambiguous Input,Unknown category example,54,38,Fail
