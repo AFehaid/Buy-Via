@@ -2,6 +2,42 @@
 
 This project contains both the backend (FastAPI) and frontend (React) services for the Buy-Via application. The services are containerized using Docker and can be managed together with Docker Compose.
 
+
+### Important Notes:
+1. **Environment Variables**:
+   - The application requires an `.env` file that contains sensitive information such as:
+     - AWS PostgreSQL RDS connection string.
+     - Authentication secret keys.
+   - These details are not included in the repository for security reasons. To run the application, you need to create a `.env` file based on the provided template (`.env.example`) and fill it with your own credentials.
+
+## Environment Variables
+The backend requires a `.env` file in the `backend` directory with the following structure:
+
+```plaintext
+# Auth settings
+AUTH_SECRET_KEY=<secret_key>
+AUTH_ALGORITHM=HS256
+
+# Backend settings
+API_URL_DEV=http://localhost:5173
+DB_URL=sqlite:///./backend/buy_via.db
+
+# Deployment environment
+DEPLOYMENT_ENVIRONMENT=DEV
+```
+
+2. **Classification Model**:
+   - The pre-trained classification model is not included in the repository due to its large size.
+3. **Database Setup**:
+   - The application is configured to connect to a PostgreSQL database hosted on AWS RDS. If you want to run the application locally, you can:
+     - Set up a local PostgreSQL or SQLite instance.
+     - Update the `.env` file with the appropriate connection string.
+
+### Repository Structure:
+- **`/backend`**: Contains the backend implementation using FastAPI.
+- **`/frontend`**: Contains the frontend implementation using React.
+
+
 ## Running Locally on a Developer Machine
 
 ## Prerequisites
@@ -94,29 +130,6 @@ npm run dev
     git clone <repository-url>
     cd Buy-Via
     ```
-
-## Environment Variables
-The backend requires a `.env` file in the `backend` directory with the following structure:
-
-```plaintext
-# Auth settings
-AUTH_SECRET_KEY=<secret_key>
-AUTH_ALGORITHM=HS256
-
-# Backend settings
-API_URL=http://localhost:5173
-DB_URL=sqlite:///./backend/buy_via.db
-
-# Deployment environment
-DEPLOYMENT_ENVIRONMENT=DEV
-
-# Email settings
-SMTP_HOST=<smtp_host>
-SMTP_PORT=<smtp_port>
-SMTP_USERNAME=<smtp_username>
-SMTP_PASSWORD=<smtp_password>
-
-```
 
 1. **Navigate to the `backend` directory**:
     ```bash

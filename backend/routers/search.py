@@ -335,6 +335,7 @@ def price_comparison(
 @router.get("/quick-search", response_model=SearchResponse)
 def quick_search(
     query: str = Query(..., min_length=1, description="Search query"),
+    category_id: Optional[int] = Query(None, description="Optional category filter."),
     db: Session = Depends(get_db),
 ):
     """
@@ -346,7 +347,10 @@ def quick_search(
     combined_query = get_search_query(db, query, sort_by="relevance")
 
     # Only in-stock
-    combined_query = combined_query.filter(Product.availability == True)
+    # combined_query = combined_query.filter(Product.availability == True)
+
+    if category_id is not None:
+        combined_query = combined_query.filter(Product.category_id == category_id)
 
     total = combined_query.count()
 
