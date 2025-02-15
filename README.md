@@ -6,10 +6,12 @@ Buy-Via is an online platform that allows users to compare product prices across
 
 This project consists of two main components:
 
-- **Backend (FastAPI)**: The backend handles data processing, authentication, and interactions with the database.
-- **Frontend (React)**: The frontend provides a user-friendly interface for customers to search and compare prices.
+- **`/backend`**: Contains the backend implementation using FastAPI, it handles data processing, authentication, and interactions with the database.
+- **`/FrontEnd`**: Contains the frontend implementation using React, provides a user-friendly interface for customers to search and compare prices.
+- **`backend/scraper`**: Handles data collection from e-commerce websites using Selenium.
+- **`backend/ai_modules`**: Contains AI functionality for product classification, recommendations, and products grouping.
 
-The application is designed to be fast, efficient, and scalable. It runs using Docker, which makes it easier to deploy on different machines.
+The application is designed to be fast, efficient, and scalable. It runs using Docker, which makes it easier to deploy on different machines and runs the scrapes without issues.
 
 ## Technical Overview 
 
@@ -63,12 +65,6 @@ VITE_API_URL=<your_production_url>
 VITE_DEPLOYMENT_ENVIRONMENT=PROD
 ```
 
-### Repository Structure:
-
-- **`/backend`**: Contains the backend implementation using FastAPI.
-- **`/frontend`**: Contains the frontend implementation using React.
-- **`/scraper`**: Handles data collection from e-commerce websites using Selenium.
-- **`/ai_modules`**: Contains AI functionality for product classification, recommendations, and products grouping.
 
 2. **Classification Model**:
    - The pre-trained classification model `backend/ai_modules/classification_model.pkl` is not included in the github repository due to its large size.
