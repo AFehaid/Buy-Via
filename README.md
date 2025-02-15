@@ -1,17 +1,43 @@
 # Buy-Via Application
 
+## Introduction (For Non-Technical Users)
+
+Buy-Via is an online platform that allows users to compare product prices across multiple e-commerce websites. The system automatically collects data from different online stores using web scraping, ensuring that users always have access to the latest prices.
+
+This project consists of two main components:
+
+- **Backend (FastAPI)**: The backend handles data processing, authentication, and interactions with the database.
+- **Frontend (React)**: The frontend provides a user-friendly interface for customers to search and compare prices.
+
+The application is designed to be fast, efficient, and scalable. It runs using Docker, which makes it easier to deploy on different machines.
+
+## Technical Overview (For Developers)
+
 This project contains both the backend (FastAPI) and frontend (React) services for the Buy-Via application. The services are containerized using Docker and can be managed together with Docker Compose.
+
+### GitHub Repository
+
+The source code for the Buy-Via application is available on GitHub:
+
+🔗 **[Buy-Via GitHub Repository](https://github.com/FAHOO20/Buy-Via/)**
 
 
 ### Important Notes:
+
 1. **Environment Variables**:
-   - The application requires an `.env` file that contains sensitive information such as:
-     - AWS PostgreSQL RDS connection string.
-     - Authentication secret keys.
-   - These details are not included in the repository for security reasons. To run the application, you need to create a `.env` file based on the provided template (`.env.example`) and fill it with your own credentials.
+    - The application requires `.env` files for both the backend and frontend.
+    - The backend `.env` file contains:
+      - AWS PostgreSQL RDS connection string.
+      - Authentication secret keys.
+    - The frontend `.env` file contains:
+      - API URLs for different environments.
+    - These details are not included in the repository for security reasons. To run the application, you need to create `.env` files based on the provided templates (`.env.example`) and fill them with your own credentials.
 
 ## Environment Variables
-The backend requires a `.env` file in the `backend` directory with the following structure:
+
+### Backend
+
+The backend requires a `.env` file in the `backend/.env` directory with the following structure:
 
 ```plaintext
 # Auth settings
@@ -20,22 +46,49 @@ AUTH_ALGORITHM=HS256
 
 # Backend settings
 API_URL_DEV=http://localhost:5173
-DB_URL=sqlite:///./backend/buy_via.db
+API_URL=<your_production_url>
+DB_URL=postgresql://username:password@localhost:5432/database_name
 
 # Deployment environment
 DEPLOYMENT_ENVIRONMENT=DEV
 ```
 
-2. **Classification Model**:
-   - The pre-trained classification model is not included in the repository due to its large size.
-3. **Database Setup**:
-   - The application is configured to connect to a PostgreSQL database hosted on AWS RDS. If you want to run the application locally, you can:
-     - Set up a local PostgreSQL or SQLite instance.
-     - Update the `.env` file with the appropriate connection string.
+### Frontend
+
+The frontend requires a `.env` file in the `FrontEnd/.env` directory with the following structure:
+
+```plaintext
+VITE_API_URL_DEV=http://localhost:8000
+VITE_API_URL=<your_production_url>
+VITE_DEPLOYMENT_ENVIRONMENT=PROD
+```
 
 ### Repository Structure:
+
 - **`/backend`**: Contains the backend implementation using FastAPI.
 - **`/frontend`**: Contains the frontend implementation using React.
+- **`/scraper`**: Handles data collection from e-commerce websites using Selenium.
+- **`/ai_modules`**: Contains AI functionality for product classification, recommendations, and products grouping.
+
+2. **Classification Model**:
+   - The pre-trained classification model `backend/ai_modules/classification_model.pkl` is not included in the github repository due to its large size.
+3. **Database Setup**:
+   - The application is configured to connect to a PostgreSQL database hosted on AWS RDS. If you want to run the application locally, you can:
+     - Set up a local PostgreSQL instance.
+     - Update the `.env` file with the appropriate connection string for your PostgreSQL instance.
+
+
+## Different Ways to Run the Program
+
+You can run the application in multiple ways:
+
+1. **Local Python Environment**  
+   Activate a virtual environment and install dependencies manually.  
+   Recommended if you prefer more control over your environment.
+
+2. **Docker (Recommended)**  
+   Build and run the containers without worrying about environment conflicts.  
+   Ideal if you want to ensure the scraper works with minimal setup issues.
 
 
 ## Running Locally on a Developer Machine
@@ -131,15 +184,6 @@ npm run dev
     cd Buy-Via
     ```
 
-1. **Navigate to the `backend` directory**:
-    ```bash
-    cd backend
-    ```
-
-2. **Create a `.env` file** with the above variables and replace `<values>` with the correct information.
-
-## Running the Project
-
 ### Using Docker Compose (Recommended)
 Run these commands from the **root directory (`Buy-Via`)**:
 
@@ -211,13 +255,3 @@ Run these commands from the **root directory (`Buy-Via`)**:
 
 4. **Access the frontend** at [http://localhost:5173](http://localhost:5173).
 
-### Common Troubleshooting
-
-## Development Notes
-
-- Backend service: **FastAPI**.
-- Frontend service: **React** with **Vite**.
-- The project uses **Docker Compose** for seamless container orchestration.
-- Live code synchronization is supported for local development using mounted volumes.
-
-This guide ensures that developers know **which directory** to navigate to and run commands, reducing confusion.
