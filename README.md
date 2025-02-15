@@ -1,6 +1,6 @@
 # Buy-Via Application
 
-## Introduction (For Non-Technical Users)
+## Introduction 
 
 Buy-Via is an online platform that allows users to compare product prices across multiple e-commerce websites. The system automatically collects data from different online stores using web scraping, ensuring that users always have access to the latest prices.
 
@@ -11,7 +11,7 @@ This project consists of two main components:
 
 The application is designed to be fast, efficient, and scalable. It runs using Docker, which makes it easier to deploy on different machines.
 
-## Technical Overview (For Developers)
+## Technical Overview 
 
 This project contains both the backend (FastAPI) and frontend (React) services for the Buy-Via application. The services are containerized using Docker and can be managed together with Docker Compose.
 
