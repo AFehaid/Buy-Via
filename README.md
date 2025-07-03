@@ -3,6 +3,17 @@
 ## Introduction 
 
 Buy-Via is an online platform that allows users to compare product prices across multiple e-commerce websites. The system automatically collects data from different online stores using web scraping, ensuring that users always have access to the latest prices.
+## Home Page:
+![Image Alt](https://github.com/AFehaid/Buy-Via/blob/3d5c2e930ef427fec8e923869912b760018a0935/screenshots/Desktop_HomePage.jpg)
+
+## Search Results:
+![Image Alt](https://github.com/AFehaid/Buy-Via/blob/3d5c2e930ef427fec8e923869912b760018a0935/screenshots/Desktop_SearchResult.jpg)
+
+## Product Page:
+![Image Alt](https://github.com/AFehaid/Buy-Via/blob/3d5c2e930ef427fec8e923869912b760018a0935/screenshots/Desktop_product.jpg)
+
+## Alerts Page:
+![Image Alt](https://github.com/AFehaid/Buy-Via/blob/3d5c2e930ef427fec8e923869912b760018a0935/screenshots/Desktop_Alerts.jpg)
 
 This project consists of two main components:
 
